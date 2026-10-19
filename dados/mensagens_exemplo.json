@@ -1,0 +1,36 @@
+{
+  "origem_comunidade": "Discord_Grupo_ONE_G10",
+  "periodo_referencia": "Semana_04",
+  "interacoes": [
+    {
+      "autor": "Mariana Souza",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
+      "texto": "Pessoal, passei no processo seletivo para Desenvolvedora Júnior de IA! O projeto do curso de LangChain e OCI que construí no portfólio fez toda a diferença na entrevista técnica."
+    },
+    {
+      "autor": "Lucas Albuquerque",
+      "canal": "#duvidas-langgraph",
+      "tipo": "pergunta_tecnica",
+      "texto": "Estou com dúvida de como estruturar os nós condicionais no LangGraph quando a resposta do Gemini precisa de retry. Alguém tem um exemplo prático de router?"
+    },
+    {
+      "autor": "Carla Mendes",
+      "canal": "#feedback-geral",
+      "tipo": "feedback",
+      "texto": "As aulas de engenharia de prompts e automação com n8n abriram minha mente. Consegui montar meu primeiro fluxo integrado hoje!"
+    },
+    {
+      "autor": "Rafael Lima",
+      "canal": "#projetos-alunos",
+      "tipo": "entrega_projeto",
+      "texto": "Concluí o deploy do meu assistente inteligente usando Streamlit Cloud e ChromaDB. Deixei o link no repositório do GitHub para quem quiser testar."
+    },
+    {
+      "autor": "Beatriz Lima",
+      "canal": "#suporte-oci",
+      "tipo": "pergunta_tecnica",
+      "texto": "Estou empacada na criação do bucket no OCI Object Storage na camada Always Free. Alguém sabe qual permissão exata preciso configurar na policy?"
+    }
+  ]
+}
