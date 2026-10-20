@@ -1,0 +1,30 @@
+{
+  "origem_comunidade": "Discord_Grupo_ONE_G10",
+  "periodo_referencia": "Semana_04_Sprint_1",
+  "interacoes": [
+    {
+      "id": "DEMO_01",
+      "autor": "Maria Silva",
+      "canal": "#conquistas",
+      "tipo_esperado": "depoimento",
+      "descricao_cenario": "Dado limpo e bem estruturado (Caminho Feliz)",
+      "texto": "Pessoal, passei no processo seletivo para Desenvolvedora Java Jr! Agradeço demais à comunidade ONE e aos instrutores por todo o apoio!"
+    },
+    {
+      "id": "DEMO_02",
+      "autor": "Carlos_123",
+      "canal": "#duvidas-gerais",
+      "tipo_esperado": "pergunta_tecnica",
+      "descricao_cenario": "Dado com sujeira / ruído (Abreviações, erros e emojis)",
+      "texto": "vc6 sabem pq o OCI da erro 500 qd rodo o script??? dps q atualizei o python deu ruim kkkk socorro hj as 22h 🛑😭"
+    },
+    {
+      "id": "DEMO_03",
+      "autor": "Anônimo",
+      "canal": "#feedback",
+      "tipo_esperado": "feedback",
+      "descricao_cenario": "Dado limítrofe / incompleto (Texto curto e ambíguo)",
+      "texto": "Achei legal o encontro de hoje."
+    }
+  ]
+}
