@@ -1,9 +1,11 @@
-# 📊 Tabela de Resultados Esperados (Sprint 1)
+# Resultados Esperados dos Casos de Demonstração
 
-Esta tabela mapeia as entradas dos **Casos de Demo** (`dados/casos_demo.json`) e os resultados estruturados esperados após o processamento pelo motor de IA.
+Tabela de validação do comportamento esperado do pipeline para os casos de teste do `casos_demo.json`:
 
-| ID Demo | Entrada (Texto Bruto) | Classificação | Sentimento Esperado | Ação Sugerida / Output |
-| :--- | :--- | :--- | :--- | :--- |
-| **DEMO_01** | *"Pessoal, passei no processo seletivo para Desenvolvedora Java Jr!..."* | `depoimento` | Positivo | Destacar no canal de vitórias e gerar card de celebração. |
-| **DEMO_02** | *"vc6 sabem pq o OCI da erro 500 qd rodo o script???..."* | `pergunta_tecnica` | Neutro / Frustrado | Notificar mentores de infraestrutura e sugerir doc do OCI. |
-| **DEMO_03** | *"Achei legal o encontro de hoje."* | `feedback` | Positivo | Armazenar no banco para métricas gerais de satisfação. |
+| ID | Tipo de Mensagem | Sentimento Esperado | Tópicos Esperados | Ativo Esperado | Relevância |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **DEMO_01** | depoimento | Muito positivo | Conquistas, Carreira, IA | post de LinkedIn | Alta |
+| **DEMO_02** | pergunta_tecnica | Negativo | API Groq, OCI, Autenticação | FAQ | Média |
+| **DEMO_03** | feedback | Positivo | Feedback, Material de Estudo | newsletter | Média |
+
+> **Nota:** A escala de sentimentos segue estritamente os 5 níveis aceitos pelo pipeline: `Muito positivo`, `Positivo`, `Neutro`, `Negativo` e `Muito negativo`.
