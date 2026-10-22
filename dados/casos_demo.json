@@ -25,6 +25,33 @@
       "tipo_esperado": "feedback",
       "descricao_cenario": "Dado limítrofe / incompleto (Texto curto e ambíguo)",
       "texto": "Achei legal o encontro de hoje."
+    },
+    {
+      "id": "DEMO 04",
+      "autor": "Carlos_123",
+      "canal": "#duvidas-gerais",
+      "tipo_esperado": "pergunta_tecnica",
+      "descricao_cenario": "Mensagem vazia para testar a limpeza",
+      "texto": ""
+    },
+    {
+      "id": "DEMO 05",
+      "autor": "Carlos_123",
+      "canal": "#duvidas-gerais",
+      "tipo_esperado": "pergunta_tecnica",
+      "descricao_cenario": "Mensagem repetida para testar a detecção de duplicatas",
+      "texto":"vc6 sabem pq o OCI da erro 500 qd rodo o script??? dps q atualizei o python deu ruim kkkk socorro hj as 22h 🛑😭"
+    },
+    {
+      "id": "DEMO_06",
+      "autor": "Joao",
+      "canal": "#duvidas-gerais",
+      "tipo_esperado": "pergunta_tecnica",
+      "descricao_cenario": "Mensagem com erros de digitação",
+      "texto":"Gente meu projetooo deu error na execução e nao consig rdodar o script"
     }
+     
+
+
   ]
 }
