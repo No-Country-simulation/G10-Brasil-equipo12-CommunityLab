@@ -1,30 +1,36 @@
 {
   "origem_comunidade": "Discord_Grupo_ONE_G10",
-  "periodo_referencia": "Semana_04_Sprint_1",
+  "periodo_referencia": "Semana_04",
   "interacoes": [
     {
       "id": "DEMO_01",
-      "autor": "Maria Silva",
-      "canal": "#conquistas",
+      "autor": "Mariana Souza",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
       "tipo_esperado": "depoimento",
-      "descricao_cenario": "Dado limpo e bem estruturado (Caminho Feliz)",
-      "texto": "Pessoal, passei no processo seletivo para Desenvolvedora Java Jr! Agradeço demais à comunidade ONE e aos instrutores por todo o apoio!"
+      "texto": "Pessoal, passei no processo seletivo para Desenvolvedora Júnior de IA!",
+      "topicos_esperados": ["Conquistas", "Carreira", "IA"],
+      "ativo_esperado": "post de LinkedIn"
     },
     {
       "id": "DEMO_02",
-      "autor": "Carlos_123",
-      "canal": "#duvidas-gerais",
+      "autor": "Carlos Lima",
+      "canal": "#duvidas-tecnicas",
+      "tipo": "pergunta_tecnica",
       "tipo_esperado": "pergunta_tecnica",
-      "descricao_cenario": "Dado com sujeira / ruído (Abreviações, erros e emojis)",
-      "texto": "vc6 sabem pq o OCI da erro 500 qd rodo o script??? dps q atualizei o python deu ruim kkkk socorro hj as 22h 🛑😭"
+      "texto": "Alguém conseguiu conectar a API da Groq no OCI sem dar erro de autenticação?",
+      "topicos_esperados": ["API Groq", "OCI", "Autenticação"],
+      "ativo_esperado": "FAQ"
     },
     {
       "id": "DEMO_03",
-      "autor": "Anônimo",
-      "canal": "#feedback",
+      "autor": "Fernanda Ribeiro",
+      "canal": "#feedbacks",
+      "tipo": "feedback",
       "tipo_esperado": "feedback",
-      "descricao_cenario": "Dado limítrofe / incompleto (Texto curto e ambíguo)",
-      "texto": "Achei legal o encontro de hoje."
+      "texto": "O material da Sprint 1 ficou excelente, mas a parte de JSON poderia ter mais exemplos.",
+      "topicos_esperados": ["Feedback", "Material de Estudo", "Sprint 1"],
+      "ativo_esperado": "newsletter"
     }
   ]
 }
