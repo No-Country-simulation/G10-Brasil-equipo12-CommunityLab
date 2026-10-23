@@ -33,6 +33,12 @@ PALAVRAS_COMUNS = {
     "pelas",
 }
 
+# Ativos publicados em nome da comunidade e os campos de texto que a verificação de conteúdo lê
+ATIVOS_PUBLICOS = ("post_linkedin", "destaque_newsletter_semanal", "case_sucesso")
+CAMPOS_TEXTO = ("titulo", "copy", "secao", "chamada", "resumo", "desafio", "solucao", "resultado")
+# Marcas de primeira pessoa do singular, já sem acentos ("agradeço" vira "agradeco")
+PRIMEIRA_PESSOA = re.compile(r"\b(eu|meu|minha|meus|minhas|estou|consegui|passei|agradeco|sou|fiz|aprendi|comecei)\b")
+
 
 def mapear_ativo(texto) -> str | None:
     """Converte o nome humano ou o nome do objeto JSON para uma chave de ATIVOS."""
@@ -92,6 +98,44 @@ def comparar_topicos(esperados, previstos) -> float:
     return acertos / len(esperados)
 
 
+def _textos_publicos(resultado: dict) -> dict:
+    """Junta os campos de texto de cada ativo público gerado."""
+    ativos = resultado.get("ativos_distribuicao_gerados")
+    if not isinstance(ativos, dict):
+        return {}
+    textos = {}
+    for nome in ATIVOS_PUBLICOS:
+        ativo = ativos.get(nome)
+        if isinstance(ativo, dict):
+            textos[nome] = " ".join(str(ativo.get(campo) or "") for campo in CAMPOS_TEXTO)
+    return textos
+
+
+def verificar_conteudo(casos: dict, resultado: dict) -> list:
+    """Aponta problemas no texto do post, da newsletter e do case.
+
+    - primeira pessoa fora de citações entre aspas (o texto deve falar em nome da comunidade);
+    - termos listados em "nao_deve_conter" de algum caso (fatos inventados ou impostos por uma mensagem).
+    """
+    problemas = []
+    proibidos = [
+        (str(caso.get("id")), termo)
+        for caso in casos.get("interacoes") or []
+        if isinstance(caso, dict)
+        for termo in caso.get("nao_deve_conter") or []
+        if normalizar_texto(termo)
+    ]
+    for nome, texto in _textos_publicos(resultado).items():
+        sem_citacoes = re.sub(r'["“”][^"“”]*["“”]', " ", texto)
+        marcas = sorted(set(PRIMEIRA_PESSOA.findall(normalizar_texto(sem_citacoes))))
+        if marcas:
+            problemas.append(f"{nome} em primeira pessoa ({', '.join(marcas)})")
+        for id_caso, termo in proibidos:
+            if normalizar_texto(termo) in normalizar_texto(texto):
+                problemas.append(f"{nome} contém {termo!r}, proibido pelo caso {id_caso}")
+    return problemas
+
+
 def avaliar(casos: dict, resultado: dict) -> dict:
     """Compara por ID sem alterar as entradas; expectativas ausentes não pontuam.
 
@@ -100,6 +144,8 @@ def avaliar(casos: dict, resultado: dict) -> dict:
     Sentimento tolerante é informativo e não entra nessa média para evitar peso duplo.
     Sem expectativas avaliáveis, a média é 0 e as acurácias por dimensão são None.
     Expectativa fora das listas oficiais (ex.: relevancia_esperada "Urgente") não pontua e gera aviso.
+    ativo_esperado "nenhum" exige uma análise presente com ativos_recomendados vazio.
+    Os problemas de conteúdo (verificar_conteudo) ficam em "conteudo", fora da acurácia.
     """
     analises = {
         str(item.get("id", "")).strip(): item
@@ -148,16 +194,17 @@ def avaliar(casos: dict, resultado: dict) -> dict:
                     )
 
             if caso.get("ativo_esperado") is not None:
+                recomendados = previsto.get("ativos_recomendados")
+                recomendados = [mapear_ativo(nome) for nome in recomendados] if isinstance(recomendados, list) else []
                 ativo = mapear_ativo(caso["ativo_esperado"])
-                if ativo is None:
+                if normalizar_texto(caso["ativo_esperado"]) == "nenhum":
+                    # A mensagem não deve servir de matéria-prima para nenhum ativo
+                    notas["ativo"] = float(id_caso in analises and not recomendados)
+                elif ativo is None:
                     avisos.append(
                         f"{id_caso}: ativo_esperado inválido no arquivo de casos ({caso['ativo_esperado']!r})"
                     )
                 else:
-                    recomendados = previsto.get("ativos_recomendados")
-                    recomendados = (
-                        [mapear_ativo(nome) for nome in recomendados] if isinstance(recomendados, list) else []
-                    )
                     notas["ativo"] = float(ativo in recomendados)
             if _textos(caso.get("topicos_esperados")):
                 notas["topicos"] = comparar_topicos(caso["topicos_esperados"], previsto.get("topicos", []))
@@ -185,6 +232,7 @@ def avaliar(casos: dict, resultado: dict) -> dict:
         "casos": linhas,
         "metricas": metricas,
         "acuracia_media": sum(medias) / len(medias) if medias else 0.0,
+        "conteudo": verificar_conteudo(casos, resultado),
     }
 
 
@@ -216,6 +264,12 @@ def _imprimir(avaliacao: dict):
         percentual = f"{metrica['acuracia']:.1%}" if metrica["total"] else "não avaliada"
         print(f"  {dimensao}: {percentual} ({metrica['total']} casos)")
     print(f"Acurácia média: {avaliacao['acuracia_media']:.1%} (sentimento exato; tolerância fora da média)")
+    if avaliacao["conteudo"]:
+        print("\nProblemas no conteúdo gerado:")
+        for problema in avaliacao["conteudo"]:
+            print(f"  {problema}")
+    else:
+        print("\nConteúdo gerado: nenhum problema de primeira pessoa ou termo proibido.")
     for aviso in avaliacao["avisos"]:
         print(f"Aviso: {aviso}")
 
@@ -233,7 +287,11 @@ def _acuracia_minima(texto: str) -> float:
 def main(argumentos=None) -> int:
     """Executa a CLI; resultado salvo evita inteiramente a chamada ao pipeline/LLM."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--casos", default=str(Path(__file__).resolve().parents[1] / "dados/casos_demo.json"))
+    parser.add_argument(
+        "--casos",
+        default=str(Path(__file__).resolve().parents[1] / "dados/casos_demo.json"),
+        help="Arquivo de casos (padrão: dados/casos_demo.json; conjunto maior: dados/casos_avaliacao.json)",
+    )
     parser.add_argument("--resultado", help="JSON do pipeline já salvo; não chama a LLM")
     parser.add_argument("--salvar", help="Grava o JSON do pipeline, não o relatório de métricas")
     parser.add_argument("--min-acuracia", type=_acuracia_minima, default=0.0, help="Mínimo entre 0 e 1 (padrão: 0)")

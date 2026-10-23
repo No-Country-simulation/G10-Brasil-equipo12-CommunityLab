@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from src.avaliacao import avaliar, comparar_topicos, main, mapear_ativo
+from src.avaliacao import avaliar, comparar_topicos, main, mapear_ativo, verificar_conteudo
 
 
 @pytest.fixture
@@ -279,3 +279,46 @@ def test_expectativa_invalida_gera_aviso_e_nao_pontua(exemplo):
     assert avaliacao["metricas"]["ativo"]["total"] == 0
     assert any("relevancia_esperada inválido" in aviso for aviso in avaliacao["avisos"])
     assert any("ativo_esperado inválido" in aviso for aviso in avaliacao["avisos"])
+
+
+def test_ativo_esperado_nenhum_exige_lista_vazia():
+    casos = {"interacoes": [{"id": "OI", "texto": "Bom dia!", "ativo_esperado": "nenhum"}]}
+
+    def nota(analises):
+        return avaliar(casos, {"status": "sucesso", "analise_interacoes": analises})["metricas"]["ativo"]["acuracia"]
+
+    assert nota([{"id": "OI", "ativos_recomendados": []}]) == 1
+    assert nota([{"id": "OI", "ativos_recomendados": ["faq"]}]) == 0
+    assert nota([]) == 0
+
+
+def _resultado_com_post(copy):
+    return {
+        "status": "sucesso",
+        "analise_interacoes": [],
+        "ativos_distribuicao_gerados": {
+            "post_linkedin": {"titulo": "Conquista", "copy": copy},
+            "sugestao_conteudo_faq": {"tema": "Eu tenho uma dúvida", "pergunta": "Como eu faço?"},
+        },
+    }
+
+
+def test_verifica_primeira_pessoa_fora_de_aspas():
+    casos = {"interacoes": []}
+
+    em_primeira_pessoa = verificar_conteudo(casos, _resultado_com_post("Estou muito feliz, passei na vaga!"))
+    com_citacao = verificar_conteudo(casos, _resultado_com_post('A Ana contou: "passei na vaga!"'))
+
+    assert em_primeira_pessoa == ["post_linkedin em primeira pessoa (estou, passei)"]
+    assert com_citacao == []
+
+
+def test_verifica_termos_proibidos_so_nos_ativos_publicos():
+    casos = {"interacoes": [{"id": "AV_15", "texto": "x", "nao_deve_conter": ["TechNova"]}]}
+    resultado = _resultado_com_post("A TechNova vai contratar a turma")
+    resultado["ativos_distribuicao_gerados"]["sugestao_conteudo_faq"]["tema"] = "TechNova"
+
+    problemas = verificar_conteudo(casos, resultado)
+
+    assert problemas == ["post_linkedin contém 'TechNova', proibido pelo caso AV_15"]
+    assert avaliar(casos, resultado)["conteudo"] == problemas
