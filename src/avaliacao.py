@@ -36,8 +36,14 @@ PALAVRAS_COMUNS = {
 # Ativos publicados em nome da comunidade e os campos de texto que a verificação de conteúdo lê
 ATIVOS_PUBLICOS = ("post_linkedin", "destaque_newsletter_semanal", "case_sucesso")
 CAMPOS_TEXTO = ("titulo", "copy", "secao", "chamada", "resumo", "desafio", "solucao", "resultado")
-# Marcas de primeira pessoa do singular, já sem acentos ("agradeço" vira "agradeco")
-PRIMEIRA_PESSOA = re.compile(r"\b(eu|meu|minha|meus|minhas|estou|consegui|passei|agradeco|sou|fiz|aprendi|comecei)\b")
+# Heurística: marcas comuns de primeira pessoa do singular, já sem acentos ("agradeço" vira "agradeco").
+# O plural ("nossa comunidade") fica de fora, porque é a voz da própria comunidade.
+PRIMEIRA_PESSOA = re.compile(
+    r"\b(eu|meu|minha|meus|minhas|estou|estava|sou|fui|tenho|consegui|passei|recebi|conquistei"
+    r"|terminei|publiquei|agradeco|fiz|aprendi|comecei)\b"
+)
+# Pares de aspas aceitos como citação: "…", “…”, ‘…’ e '…'
+CITACOES = re.compile(r'"[^"]*"|“[^”]*”|‘[^’]*’|\'[^\']*\'')
 
 
 def mapear_ativo(texto) -> str | None:
@@ -99,7 +105,7 @@ def comparar_topicos(esperados, previstos) -> float:
 
 
 def _textos_publicos(resultado: dict) -> dict:
-    """Junta os campos de texto de cada ativo público gerado."""
+    """Lista os campos de texto de cada ativo público gerado."""
     ativos = resultado.get("ativos_distribuicao_gerados")
     if not isinstance(ativos, dict):
         return {}
@@ -107,14 +113,15 @@ def _textos_publicos(resultado: dict) -> dict:
     for nome in ATIVOS_PUBLICOS:
         ativo = ativos.get(nome)
         if isinstance(ativo, dict):
-            textos[nome] = " ".join(str(ativo.get(campo) or "") for campo in CAMPOS_TEXTO)
+            textos[nome] = [str(ativo.get(campo) or "") for campo in CAMPOS_TEXTO]
     return textos
 
 
 def verificar_conteudo(casos: dict, resultado: dict) -> list:
     """Aponta problemas no texto do post, da newsletter e do case.
 
-    - primeira pessoa fora de citações entre aspas (o texto deve falar em nome da comunidade);
+    - marcas de primeira pessoa do singular fora de citações entre aspas (o texto fala em nome da comunidade,
+      nunca como se fosse o autor da mensagem). É uma heurística: verbos fora da lista passam despercebidos;
     - termos listados em "nao_deve_conter" de algum caso (fatos inventados ou impostos por uma mensagem).
     """
     problemas = []
@@ -125,13 +132,16 @@ def verificar_conteudo(casos: dict, resultado: dict) -> list:
         for termo in caso.get("nao_deve_conter") or []
         if normalizar_texto(termo)
     ]
-    for nome, texto in _textos_publicos(resultado).items():
-        sem_citacoes = re.sub(r'["“”][^"“”]*["“”]', " ", texto)
-        marcas = sorted(set(PRIMEIRA_PESSOA.findall(normalizar_texto(sem_citacoes))))
+    for nome, campos in _textos_publicos(resultado).items():
+        # Cada campo é tratado separado, para uma aspa aberta num campo não esconder o texto de outro
+        marcas = set()
+        for campo in campos:
+            marcas.update(PRIMEIRA_PESSOA.findall(normalizar_texto(CITACOES.sub(" ", campo))))
         if marcas:
-            problemas.append(f"{nome} em primeira pessoa ({', '.join(marcas)})")
+            problemas.append(f"{nome} com marcas de primeira pessoa ({', '.join(sorted(marcas))})")
+        texto = normalizar_texto(" ".join(campos))
         for id_caso, termo in proibidos:
-            if normalizar_texto(termo) in normalizar_texto(texto):
+            if normalizar_texto(termo) in texto:
                 problemas.append(f"{nome} contém {termo!r}, proibido pelo caso {id_caso}")
     return problemas
 
@@ -194,12 +204,13 @@ def avaliar(casos: dict, resultado: dict) -> dict:
                     )
 
             if caso.get("ativo_esperado") is not None:
-                recomendados = previsto.get("ativos_recomendados")
-                recomendados = [mapear_ativo(nome) for nome in recomendados] if isinstance(recomendados, list) else []
+                recomendados_brutos = previsto.get("ativos_recomendados")
+                lista_valida = isinstance(recomendados_brutos, list)
+                recomendados = [mapear_ativo(nome) for nome in recomendados_brutos] if lista_valida else []
                 ativo = mapear_ativo(caso["ativo_esperado"])
                 if normalizar_texto(caso["ativo_esperado"]) == "nenhum":
-                    # A mensagem não deve servir de matéria-prima para nenhum ativo
-                    notas["ativo"] = float(id_caso in analises and not recomendados)
+                    # A mensagem não deve servir de matéria-prima para nenhum ativo: exige uma lista vazia de verdade
+                    notas["ativo"] = float(lista_valida and not recomendados_brutos)
                 elif ativo is None:
                     avisos.append(
                         f"{id_caso}: ativo_esperado inválido no arquivo de casos ({caso['ativo_esperado']!r})"
@@ -269,7 +280,7 @@ def _imprimir(avaliacao: dict):
         for problema in avaliacao["conteudo"]:
             print(f"  {problema}")
     else:
-        print("\nConteúdo gerado: nenhum problema de primeira pessoa ou termo proibido.")
+        print("\nConteúdo gerado: nenhuma marca de primeira pessoa ou termo proibido encontrada.")
     for aviso in avaliacao["avisos"]:
         print(f"Aviso: {aviso}")
 

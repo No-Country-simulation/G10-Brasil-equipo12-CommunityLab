@@ -49,7 +49,7 @@ Feedback negativo fica sem ativo esperado: ainda falta o time decidir se ele vai
 ## Conteúdo gerado
 
 - `nao_deve_conter`: termos que não podem aparecer no post, na newsletter nem no case. Servem para fatos que nenhuma mensagem afirma (por exemplo, dizer que a mentoria ajudou quando ninguém disse isso) e para o que uma mensagem tenta impor ao sistema.
-- Post, newsletter e case devem estar em terceira pessoa, na voz da comunidade. A avaliação aponta marcas de primeira pessoa fora de citações entre aspas.
+- Post, newsletter e case falam em nome da comunidade ("nossa comunidade" pode), nunca como se fossem o autor da mensagem. A avaliação aponta marcas comuns de primeira pessoa do singular fora de citações entre aspas; é uma heurística, e verbos fora da lista passam despercebidos.
 
 ## Conferência dos rótulos
 

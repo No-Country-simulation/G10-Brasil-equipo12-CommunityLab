@@ -290,6 +290,9 @@ def test_ativo_esperado_nenhum_exige_lista_vazia():
     assert nota([{"id": "OI", "ativos_recomendados": []}]) == 1
     assert nota([{"id": "OI", "ativos_recomendados": ["faq"]}]) == 0
     assert nota([]) == 0
+    assert nota([{"id": "OI"}]) == 0
+    assert nota([{"id": "OI", "ativos_recomendados": None}]) == 0
+    assert nota([{"id": "OI", "ativos_recomendados": "faq"}]) == 0
 
 
 def _resultado_com_post(copy):
@@ -309,7 +312,7 @@ def test_verifica_primeira_pessoa_fora_de_aspas():
     em_primeira_pessoa = verificar_conteudo(casos, _resultado_com_post("Estou muito feliz, passei na vaga!"))
     com_citacao = verificar_conteudo(casos, _resultado_com_post('A Ana contou: "passei na vaga!"'))
 
-    assert em_primeira_pessoa == ["post_linkedin em primeira pessoa (estou, passei)"]
+    assert em_primeira_pessoa == ["post_linkedin com marcas de primeira pessoa (estou, passei)"]
     assert com_citacao == []
 
 
@@ -322,3 +325,22 @@ def test_verifica_termos_proibidos_so_nos_ativos_publicos():
 
     assert problemas == ["post_linkedin contém 'TechNova', proibido pelo caso AV_15"]
     assert avaliar(casos, resultado)["conteudo"] == problemas
+
+
+def test_primeira_pessoa_com_outros_verbos_e_voz_da_comunidade():
+    casos = {"interacoes": []}
+
+    assert verificar_conteudo(casos, _resultado_com_post("Fui contratada e recebi uma proposta.")) == [
+        "post_linkedin com marcas de primeira pessoa (fui, recebi)"
+    ]
+    assert verificar_conteudo(casos, _resultado_com_post("Nossa comunidade celebra a vaga da Ana.")) == []
+
+
+def test_citacao_com_aspas_simples_e_aspa_aberta_em_outro_campo():
+    casos = {"interacoes": []}
+    citacao_simples = _resultado_com_post("Ana contou: ‘Eu consegui minha vaga!’ e 'passei de novo'")
+    aspa_aberta = _resultado_com_post('Estou feliz e consegui a vaga!"')
+    aspa_aberta["ativos_distribuicao_gerados"]["post_linkedin"]["titulo"] = 'Ana diz "olá'
+
+    assert verificar_conteudo(casos, citacao_simples) == []
+    assert verificar_conteudo(casos, aspa_aberta) == ["post_linkedin com marcas de primeira pessoa (consegui, estou)"]
