@@ -59,11 +59,14 @@ python -m src.teste_execucao dados/casos_demo.json
 
 O resultado traz `status`: `sucesso`, `parcial` (com a lista de `avisos`) ou `erro`. Quando a LLM falha, o pipeline não inventa conteúdo.
 
-Avaliar o pipeline contra os casos de `dados/casos_demo.json`:
+Avaliar o pipeline contra os casos de demonstração (`dados/casos_demo.json`, 3 casos) ou contra o conjunto maior (`dados/casos_avaliacao.json`, 18 casos rotulados segundo [docs/criterios_rotulagem.md](docs/criterios_rotulagem.md)):
 
 ```bash
 python -m src.avaliacao
+python -m src.avaliacao --casos dados/casos_avaliacao.json
 ```
+
+Além da acurácia por campo, a avaliação aponta post, newsletter ou case escritos em primeira pessoa ou com termos que os casos proíbem.
 
 Rodar os testes automatizados (não chamam a LLM) e conferir lint e formatação, como o GitHub Actions faz em cada Pull Request:
 

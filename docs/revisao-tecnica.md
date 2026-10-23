@@ -4,7 +4,7 @@ Revisão de 23/10/2026, feita por Gabriel Maia com Claude, Codex e OpenCode.
 
 ## Resumo
 
-O CommunityLab tem a estrutura certa (ingestão, limpeza, LLM, validação), mas no main as falhas da IA apareciam como sucesso, com texto inventado. Além disso, a saída não trazia cases de sucesso nem análise por mensagem. A branch `feat/revisao-pipeline-avaliacao` corrige os 14 problemas encontrados e completa os quatro ativos da proposta. Ela também traz um script de avaliação: a acurácia média ficou entre 76% e 87% nos casos de demonstração, com dois modelos diferentes, e os 78 testes passam.
+O CommunityLab tem a estrutura certa (ingestão, limpeza, LLM, validação), mas no main as falhas da IA apareciam como sucesso, com texto inventado. Além disso, a saída não trazia cases de sucesso nem análise por mensagem. A branch `feat/revisao-pipeline-avaliacao` corrige os 14 problemas encontrados e completa os quatro ativos da proposta. Ela também traz um script de avaliação com 18 casos rotulados: depois das regras de conteúdo, a acurácia média ficou entre 88% e 90% pela API da NVIDIA, e os 84 testes passam.
 
 - **Revisores:** Claude (Claude Code), Codex (GPT-6-Astra) e OpenCode (Gemini 4 Argon), primeiro de forma independente no main, depois revisando o trabalho uns dos outros.
 - **Ainda falta:** validar com a Groq, o modelo do projeto. As rodadas usaram a API da NVIDIA e um modelo local, porque não havia chave da Groq disponível.
@@ -64,11 +64,11 @@ A saída agora cobre os quatro ativos da proposta e traz uma análise para cada 
 - **README**: correção do diagrama, tabela do que já está implementado, escolha da LLM e passo a passo para rodar.
 - **Padronização**: código formatado com ruff, configuração do pytest em `pyproject.toml` e GitHub Actions rodando lint e testes em cada Pull Request.
 
-## Avaliação automática e resultados
+## Avaliação automática: primeira rodada
 
 Em 6 rodadas sobre `dados/casos_demo.json`, com dois modelos, a acurácia média ficou entre 76% e 87%. O tipo de mensagem acertou em todas. O sentimento da DEMO_02 errou nas 6, sempre com a mesma resposta, o que aponta para o rótulo esperado e não para o modelo (próxima seção).
 
-O script `src/avaliacao.py` roda o pipeline nos casos de demonstração e compara cada resposta com os campos `*_esperado` do JSON. Os 78 testes automatizados passam e não chamam a LLM.
+O script `src/avaliacao.py` roda o pipeline nos casos de demonstração e compara cada resposta com os campos `*_esperado` do JSON. Os 84 testes automatizados passam e não chamam a LLM.
 
 ```bash
 python -m src.avaliacao                               # chama a LLM configurada no .env
@@ -100,6 +100,27 @@ Acertos por caso nas 2 rodadas com `openai/gpt-oss-20b` pela API da NVIDIA (acur
 - Na conta usada, o Nemotron Super não estava liberado e o Nemotron Ultra devolveu JSON inválido. Por isso o padrão ficou `openai/gpt-oss-20b`.
 - Falta validar com a Groq (`openai/gpt-oss-120b`), que é o modelo do projeto. Com a `GROQ_API_KEY` no `.env`, basta rodar `python -m src.avaliacao`.
 
+## Segunda rodada: mais casos e regras de conteúdo
+
+O prompt ganhou duas regras: escrever post, newsletter e case em terceira pessoa e não atribuir causas que a mensagem não diz. Com elas, os problemas de conteúdo caíram e a acurácia subiu, medidos pela API da NVIDIA (`openai/gpt-oss-20b`).
+
+- **Casos de avaliação** (`dados/casos_avaliacao.json`): 18 mensagens cobrindo depoimentos, dúvidas com e sem frustração, feedbacks, entregas, saudação, venda, uma tentativa de dar ordens ao sistema e uma mensagem vazia. Os critérios estão em `docs/criterios_rotulagem.md`. O Codex rotulou as mensagens às cegas e concordou em 67 de 68 rótulos; os 2 casos discutíveis foram ajustados.
+- **Verificação de conteúdo:** a avaliação aponta marcas comuns de primeira pessoa do singular fora de aspas e termos proibidos (`nao_deve_conter`) no post, na newsletter e no case. É uma heurística revisada pelo Codex: pega os casos observados, mas verbos fora da lista e sinônimos dos termos proibidos passam despercebidos.
+- **Respostas cortadas:** com o limite de 4.096 tokens, o `gpt-oss-20b` gastava quase tudo raciocinando e o JSON vinha cortado em lotes de 17 mensagens. O limite subiu para 16.384, e as três integrações agora avisam "resposta cortada pelo limite de tokens" em vez de "JSON inválido".
+- **Tempo de espera:** uma rodada passou de 180 segundos no endpoint gratuito da NVIDIA. O limite subiu para 300 segundos.
+
+| Medida (NVIDIA, `gpt-oss-20b`) | Antes das regras | Depois das regras |
+| --- | --- | --- |
+| Rodadas com problema de conteúdo, casos de demonstração | 3 de 6 | 1 de 6 |
+| Rodadas com post em primeira pessoa | 2 de 6 | 0 de 6 |
+| Acurácia média, 18 casos (3 rodadas) | 83%, 85%, 86% | 88%, 89%, 90% |
+| Sentimento, 18 casos | 59% a 65% | 76% a 82% |
+| Relevância, 18 casos | 71% a 88% | 88% a 100% |
+
+- O problema que restou foi o post dizer que a vaga veio "graças ao aprendizado e networking na comunidade", o que a mensagem não diz. O exemplo de JSON do prompt contém `encaminhado_para_mentoria`, o que pode puxar o modelo para esse assunto.
+- A melhora de sentimento e relevância se repetiu nas 3 rodadas, mas as regras novas não falam desses campos. A explicação mais provável é o modelo ficar mais literal; com 3 rodadas, não dá para ter certeza.
+- Os erros de sentimento que restam são de intensidade (Muito positivo contra Positivo). Colocar no prompt as definições de `docs/criterios_rotulagem.md` deve ajudar, mas isso depende de o time aprovar os critérios.
+
 ## Decisões do time e próximos passos
 
 Seis pontos dependem do time e não foram decididos no código:
@@ -115,6 +136,7 @@ Próximos passos sugeridos:
 
 - [ ] Rodar `python -m src.avaliacao` com a chave da Groq
 - [ ] Combinar no guia de commits os tipos `test:`, `style:` e `ci:`, que hoje não existem
-- [ ] Aumentar os casos de demonstração: com 3 casos, cada erro muda a acurácia em 33 pontos
+- [ ] Revisar e aprovar `docs/criterios_rotulagem.md`; se aprovado, colocar as definições de sentimento e relevância no prompt e medir de novo
+- [ ] Aumentar ainda mais os casos: com 17 mensagens, cada erro ainda muda a acurácia de um campo em 6 pontos
 - [ ] Prever revisão humana dos ativos antes de qualquer publicação
 - [ ] Implementar Discord, PDF, LangGraph e upload no OCI, ou tirar do README o que não vai entrar no hackathon
