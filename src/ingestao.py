@@ -17,14 +17,23 @@ def ler_mensagens_comunidade(caminho_arquivo: str) -> dict:
     if extensao == ".json":
         with open(caminho, "r", encoding="utf-8") as f:
             dados = json.load(f)
-            return dados
+        # Aceita também um arquivo que seja só a lista de interações
+        if isinstance(dados, list):
+            dados = {"interacoes": dados}
+        if not isinstance(dados, dict) or not isinstance(dados.get("interacoes"), list):
+            raise ValueError(f"{caminho_arquivo} precisa ter uma lista em \"interacoes\".")
+        return dados
             
     elif extensao == ".csv":
         interacoes = []
         with open(caminho, "r", encoding="utf-8") as f:
             leitor = csv.DictReader(f)
+            # Sem a coluna "texto" todas as linhas seriam descartadas em silêncio na limpeza
+            if "texto" not in (leitor.fieldnames or []):
+                raise ValueError(f"{caminho_arquivo} precisa ter a coluna \"texto\". Colunas encontradas: {leitor.fieldnames}")
             for linha in leitor:
                 interacoes.append({
+                    "id": linha.get("id", ""),
                     "autor": linha.get("autor", "Desconhecido"),
                     "canal": linha.get("canal", "#geral"),
                     "tipo": linha.get("tipo", "geral"),
