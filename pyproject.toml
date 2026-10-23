@@ -1,0 +1,4 @@
+[tool.pytest.ini_options]
+# Permite rodar só "pytest" na raiz: os testes importam o pacote src
+pythonpath = ["."]
+testpaths = ["tests"]
