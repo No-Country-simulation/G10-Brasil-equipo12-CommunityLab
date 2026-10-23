@@ -32,6 +32,12 @@ def _mensagens(system_prompt: str, prompt_usuario: str) -> list:
     ]
 
 
+def _conferir_fim(motivo, provedor: str):
+    # Modelos que raciocinam antes de responder gastam tokens nisso; se o limite acaba, o JSON vem cortado
+    if motivo == "length":
+        raise RuntimeError(f"a resposta da {provedor} foi cortada pelo limite de tokens")
+
+
 def _post_json(url: str, corpo: dict, cabecalhos: dict, timeout: int, segredo: str = "") -> dict:
     requisicao = urllib.request.Request(
         url,
@@ -64,7 +70,9 @@ def _chamar_groq(system_prompt: str, prompt_usuario: str) -> str:
         temperature=0.2,
         response_format={"type": "json_object"},
     )
-    return chat_completion.choices[0].message.content
+    escolha = chat_completion.choices[0]
+    _conferir_fim(escolha.finish_reason, "Groq")
+    return escolha.message.content
 
 
 def _chamar_nvidia(system_prompt: str, prompt_usuario: str) -> str:
@@ -79,11 +87,13 @@ def _chamar_nvidia(system_prompt: str, prompt_usuario: str) -> str:
         "messages": _mensagens(system_prompt, prompt_usuario),
         "temperature": 0.2,
         "response_format": {"type": "json_object"},
-        # Sem limite explícito, respostas longas podem vir cortadas
-        "max_tokens": 4096,
+        # O gpt-oss raciocina antes de responder: com 4096 tokens, lotes de ~17 mensagens vinham cortados
+        "max_tokens": 16384,
     }
     resposta = _post_json(url, corpo, {"Authorization": f"Bearer {api_key}"}, timeout=180, segredo=api_key)
-    return resposta["choices"][0]["message"]["content"]
+    escolha = resposta["choices"][0]
+    _conferir_fim(escolha.get("finish_reason"), "NVIDIA")
+    return escolha["message"]["content"]
 
 
 def _chamar_ollama(system_prompt: str, prompt_usuario: str) -> str:
@@ -99,4 +109,6 @@ def _chamar_ollama(system_prompt: str, prompt_usuario: str) -> str:
         "stream": False,
         "options": {"temperature": 0.2},
     }
-    return _post_json(url, corpo, {}, timeout=600)["message"]["content"]
+    resposta = _post_json(url, corpo, {}, timeout=600)
+    _conferir_fim(resposta.get("done_reason"), "Ollama")
+    return resposta["message"]["content"]

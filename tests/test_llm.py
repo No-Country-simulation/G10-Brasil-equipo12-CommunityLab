@@ -116,3 +116,16 @@ def test_erro_http_mascara_a_chave_e_le_so_o_comeco(monkeypatch):
     assert "nvapi-secreta" not in str(erro.value)
     assert "Invalid API key: ***" in str(erro.value)
     assert lidos and all(0 < tamanho <= 2000 for tamanho in lidos)
+
+
+def test_resposta_cortada_pelo_limite_de_tokens_vira_erro_claro(monkeypatch):
+    def urlopen_cortado(requisicao, timeout):
+        corpo = {"choices": [{"finish_reason": "length", "message": {"content": '{"resumo": "pela met'}}]}
+        return io.BytesIO(json.dumps(corpo).encode("utf-8"))
+
+    monkeypatch.setattr(llm.urllib.request, "urlopen", urlopen_cortado)
+    monkeypatch.setenv("LLM_PROVIDER", "nvidia")
+    monkeypatch.setenv("NVIDIA_API_KEY", "nvapi-teste")
+
+    with pytest.raises(RuntimeError, match="cortada pelo limite de tokens"):
+        llm.chamar_llm("sistema", "usuario")
