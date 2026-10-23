@@ -4,7 +4,7 @@ Revisão de 23/10/2026, feita por Gabriel Maia com Claude, Codex e OpenCode.
 
 ## Resumo
 
-O CommunityLab tem a estrutura certa (ingestão, limpeza, LLM, validação), mas no main as falhas da IA apareciam como sucesso, com texto inventado. Além disso, a saída não trazia cases de sucesso nem análise por mensagem. A branch `feat/revisao-pipeline-avaliacao` corrige os 14 problemas encontrados e completa os quatro ativos da proposta. Ela também traz um script de avaliação: a acurácia média ficou entre 76% e 87% nos casos de demonstração, com dois modelos diferentes, e os 77 testes passam.
+O CommunityLab tem a estrutura certa (ingestão, limpeza, LLM, validação), mas no main as falhas da IA apareciam como sucesso, com texto inventado. Além disso, a saída não trazia cases de sucesso nem análise por mensagem. A branch `feat/revisao-pipeline-avaliacao` corrige os 14 problemas encontrados e completa os quatro ativos da proposta. Ela também traz um script de avaliação: a acurácia média ficou entre 76% e 87% nos casos de demonstração, com dois modelos diferentes, e os 78 testes passam.
 
 - **Revisores:** Claude (Claude Code), Codex (GPT-6-Astra) e OpenCode (Gemini 4 Argon), primeiro de forma independente no main, depois revisando o trabalho uns dos outros.
 - **Ainda falta:** validar com a Groq, o modelo do projeto. As rodadas usaram a API da NVIDIA e um modelo local, porque não havia chave da Groq disponível.
@@ -68,7 +68,7 @@ A saída agora cobre os quatro ativos da proposta e traz uma análise para cada 
 
 Em 6 rodadas sobre `dados/casos_demo.json`, com dois modelos, a acurácia média ficou entre 76% e 87%. O tipo de mensagem acertou em todas. O sentimento da DEMO_02 errou nas 6, sempre com a mesma resposta, o que aponta para o rótulo esperado e não para o modelo (próxima seção).
 
-O script `src/avaliacao.py` roda o pipeline nos casos de demonstração e compara cada resposta com os campos `*_esperado` do JSON. Os 77 testes automatizados passam e não chamam a LLM.
+O script `src/avaliacao.py` roda o pipeline nos casos de demonstração e compara cada resposta com os campos `*_esperado` do JSON. Os 78 testes automatizados passam e não chamam a LLM.
 
 ```bash
 python -m src.avaliacao                               # chama a LLM configurada no .env
