@@ -90,7 +90,7 @@ def _chamar_nvidia(system_prompt: str, prompt_usuario: str) -> str:
         # O gpt-oss raciocina antes de responder: com 4096 tokens, lotes de ~17 mensagens vinham cortados
         "max_tokens": 16384,
     }
-    resposta = _post_json(url, corpo, {"Authorization": f"Bearer {api_key}"}, timeout=180, segredo=api_key)
+    resposta = _post_json(url, corpo, {"Authorization": f"Bearer {api_key}"}, timeout=300, segredo=api_key)
     escolha = resposta["choices"][0]
     _conferir_fim(escolha.get("finish_reason"), "NVIDIA")
     return escolha["message"]["content"]
