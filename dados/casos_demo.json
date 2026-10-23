@@ -12,7 +12,8 @@
       "topicos_esperados": ["Conquistas", "Carreira", "IA"],
       "sentimento_esperado": "Muito positivo",
       "ativo_esperado": "post de LinkedIn",
-      "relevancia_esperada": "Alta"
+      "relevancia_esperada": "Alta",
+      "nao_deve_conter": ["mentoria", "networking"]
     },
     {
       "id": "DEMO_02",
