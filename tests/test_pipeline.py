@@ -1,4 +1,5 @@
 import json
+
 from src.pipeline import executar_pipeline
 
 
@@ -19,31 +20,33 @@ def _dados_entrada_validos():
 
 
 def _json_llm_bom():
-    return json.dumps({
-        "resumo_comunidade": {
-            "sentimento_predominante": "Muito positivo",
-            "topicos_principais": ["Carreira", "IA"],
-        },
-        "analise_interacoes": [
-            {
-                "id": "MSG_001",
-                "tipo": "depoimento",
-                "sentimento": "Muito positivo",
-                "topicos": ["Carreira", "IA"],
-                "ativos_recomendados": ["post_linkedin"],
-                "relevancia": "Alta",
-            }
-        ],
-        "ativos_distribuicao_gerados": {
-            "post_linkedin": {
-                "titulo": "Nova conquista na comunidade",
-                "copy": "Mariana conquistou sua vaga em IA!",
+    return json.dumps(
+        {
+            "resumo_comunidade": {
+                "sentimento_predominante": "Muito positivo",
+                "topicos_principais": ["Carreira", "IA"],
             },
-            "destaque_newsletter_semanal": None,
-            "sugestao_conteudo_faq": None,
-            "case_sucesso": None,
-        },
-    })
+            "analise_interacoes": [
+                {
+                    "id": "MSG_001",
+                    "tipo": "depoimento",
+                    "sentimento": "Muito positivo",
+                    "topicos": ["Carreira", "IA"],
+                    "ativos_recomendados": ["post_linkedin"],
+                    "relevancia": "Alta",
+                }
+            ],
+            "ativos_distribuicao_gerados": {
+                "post_linkedin": {
+                    "titulo": "Nova conquista na comunidade",
+                    "copy": "Mariana conquistou sua vaga em IA!",
+                },
+                "destaque_newsletter_semanal": None,
+                "sugestao_conteudo_faq": None,
+                "case_sucesso": None,
+            },
+        }
+    )
 
 
 def test_pipeline_com_llm_falsa_devolvendo_json_bom():

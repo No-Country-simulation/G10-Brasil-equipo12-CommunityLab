@@ -11,17 +11,37 @@ from src.ingestao import ler_mensagens_comunidade
 from src.limpeza import limpar_dados_comunidade, limpar_texto
 from src.validacao import casar_opcao, normalizar_texto
 
-
 DIMENSOES = ("tipo", "sentimento", "sentimento_tolerante", "relevancia", "ativo", "topicos", "descarte")
-PALAVRAS_COMUNS = {"com", "sem", "para", "por", "uma", "uns", "umas", "dos", "das",
-                   "que", "como", "sobre", "nos", "nas", "pelo", "pela", "pelos", "pelas"}
+PALAVRAS_COMUNS = {
+    "com",
+    "sem",
+    "para",
+    "por",
+    "uma",
+    "uns",
+    "umas",
+    "dos",
+    "das",
+    "que",
+    "como",
+    "sobre",
+    "nos",
+    "nas",
+    "pelo",
+    "pela",
+    "pelos",
+    "pelas",
+}
 
 
 def mapear_ativo(texto) -> str | None:
     """Converte o nome humano ou o nome do objeto JSON para uma chave de ATIVOS."""
-    nomes = {**{chave: chave for chave in ATIVOS},
-             **{valor: chave for chave, valor in ATIVOS.items()},
-             "post de LinkedIn": "post_linkedin", "case de sucesso": "case_sucesso"}
+    nomes = {
+        **{chave: chave for chave in ATIVOS},
+        **{valor: chave for chave, valor in ATIVOS.items()},
+        "post de LinkedIn": "post_linkedin",
+        "case de sucesso": "case_sucesso",
+    }
     nome = casar_opcao(texto, list(nomes))
     return nomes[nome] if nome is not None else None
 
@@ -34,8 +54,7 @@ def _textos(valor) -> list:
 
 
 def _palavras(texto: str) -> set:
-    return {palavra for palavra in re.findall(r"[a-z]+", texto)
-            if len(palavra) >= 3 and palavra not in PALAVRAS_COMUNS}
+    return {palavra for palavra in re.findall(r"[a-z]+", texto) if len(palavra) >= 3 and palavra not in PALAVRAS_COMUNS}
 
 
 def _topicos_casam(esperado: str, previsto: str) -> bool:
@@ -46,11 +65,17 @@ def _topicos_casam(esperado: str, previsto: str) -> bool:
     """
     tokens_esperado = set(re.findall(r"[a-z0-9]+", esperado))
     tokens_previsto = set(re.findall(r"[a-z0-9]+", previsto))
-    if tokens_esperado and tokens_previsto and (
-            tokens_esperado <= tokens_previsto or tokens_previsto <= tokens_esperado):
+    if (
+        tokens_esperado
+        and tokens_previsto
+        and (tokens_esperado <= tokens_previsto or tokens_previsto <= tokens_esperado)
+    ):
         return True
-    return any(a == b or (min(len(a), len(b)) >= 4 and (a.startswith(b) or b.startswith(a)))
-               for a in _palavras(esperado) for b in _palavras(previsto))
+    return any(
+        a == b or (min(len(a), len(b)) >= 4 and (a.startswith(b) or b.startswith(a)))
+        for a in _palavras(esperado)
+        for b in _palavras(previsto)
+    )
 
 
 def comparar_topicos(esperados, previstos) -> float:
@@ -63,8 +88,7 @@ def comparar_topicos(esperados, previstos) -> float:
     previstos = _textos(previstos)
     if not esperados:
         return 0.0
-    acertos = sum(any(_topicos_casam(esperado, previsto) for previsto in previstos)
-                  for esperado in esperados)
+    acertos = sum(any(_topicos_casam(esperado, previsto) for previsto in previstos) for esperado in esperados)
     return acertos / len(esperados)
 
 
@@ -77,8 +101,11 @@ def avaliar(casos: dict, resultado: dict) -> dict:
     Sem expectativas avaliáveis, a média é 0 e as acurácias por dimensão são None.
     Expectativa fora das listas oficiais (ex.: relevancia_esperada "Urgente") não pontua e gera aviso.
     """
-    analises = {str(item.get("id", "")).strip(): item
-                for item in resultado.get("analise_interacoes", []) if isinstance(item, dict)}
+    analises = {
+        str(item.get("id", "")).strip(): item
+        for item in resultado.get("analise_interacoes", [])
+        if isinstance(item, dict)
+    }
     # Reutiliza a limpeza para acompanhar IDs gerados e renomeados por duplicidade.
     interacoes_limpas = limpar_dados_comunidade(casos)["interacoes"]
     ids_validos = {interacao["id"] for interacao in interacoes_limpas}
@@ -117,17 +144,20 @@ def avaliar(casos: dict, resultado: dict) -> dict:
                 notas[dimensao] = float(esperado == previsto_valor)
                 if dimensao == "sentimento":
                     notas["sentimento_tolerante"] = float(
-                        previsto_valor is not None
-                        and abs(opcoes.index(esperado) - opcoes.index(previsto_valor)) <= 1
+                        previsto_valor is not None and abs(opcoes.index(esperado) - opcoes.index(previsto_valor)) <= 1
                     )
 
             if caso.get("ativo_esperado") is not None:
                 ativo = mapear_ativo(caso["ativo_esperado"])
                 if ativo is None:
-                    avisos.append(f"{id_caso}: ativo_esperado inválido no arquivo de casos ({caso['ativo_esperado']!r})")
+                    avisos.append(
+                        f"{id_caso}: ativo_esperado inválido no arquivo de casos ({caso['ativo_esperado']!r})"
+                    )
                 else:
                     recomendados = previsto.get("ativos_recomendados")
-                    recomendados = [mapear_ativo(nome) for nome in recomendados] if isinstance(recomendados, list) else []
+                    recomendados = (
+                        [mapear_ativo(nome) for nome in recomendados] if isinstance(recomendados, list) else []
+                    )
                     notas["ativo"] = float(ativo in recomendados)
             if _textos(caso.get("topicos_esperados")):
                 notas["topicos"] = comparar_topicos(caso["topicos_esperados"], previsto.get("topicos", []))
@@ -135,18 +165,27 @@ def avaliar(casos: dict, resultado: dict) -> dict:
         for dimensao, nota in notas.items():
             valores[dimensao].append(nota)
         presente = id_caso in analises and not (descartado and id_caso in ids_validos)
-        linhas.append({"id": id_caso, "descartado": descartado,
-                       "presente": presente, "notas": notas})
+        linhas.append({"id": id_caso, "descartado": descartado, "presente": presente, "notas": notas})
 
     metricas = {}
     for dimensao, notas in valores.items():
-        metricas[dimensao] = {"acertos": sum(notas), "total": len(notas),
-                             "acuracia": sum(notas) / len(notas) if notas else None}
-    medias = [metrica["acuracia"] for dimensao, metrica in metricas.items()
-              if dimensao != "sentimento_tolerante" and metrica["total"]]
-    return {"status": resultado.get("status", "erro"), "avisos": avisos,
-            "casos": linhas, "metricas": metricas,
-            "acuracia_media": sum(medias) / len(medias) if medias else 0.0}
+        metricas[dimensao] = {
+            "acertos": sum(notas),
+            "total": len(notas),
+            "acuracia": sum(notas) / len(notas) if notas else None,
+        }
+    medias = [
+        metrica["acuracia"]
+        for dimensao, metrica in metricas.items()
+        if dimensao != "sentimento_tolerante" and metrica["total"]
+    ]
+    return {
+        "status": resultado.get("status", "erro"),
+        "avisos": avisos,
+        "casos": linhas,
+        "metricas": metricas,
+        "acuracia_media": sum(medias) / len(medias) if medias else 0.0,
+    }
 
 
 def _imprimir(avaliacao: dict):
@@ -197,8 +236,7 @@ def main(argumentos=None) -> int:
     parser.add_argument("--casos", default=str(Path(__file__).resolve().parents[1] / "dados/casos_demo.json"))
     parser.add_argument("--resultado", help="JSON do pipeline já salvo; não chama a LLM")
     parser.add_argument("--salvar", help="Grava o JSON do pipeline, não o relatório de métricas")
-    parser.add_argument("--min-acuracia", type=_acuracia_minima, default=0.0,
-                        help="Mínimo entre 0 e 1 (padrão: 0)")
+    parser.add_argument("--min-acuracia", type=_acuracia_minima, default=0.0, help="Mínimo entre 0 e 1 (padrão: 0)")
     args = parser.parse_args(argumentos)
 
     from dotenv import load_dotenv

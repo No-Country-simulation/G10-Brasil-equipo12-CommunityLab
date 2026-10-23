@@ -64,7 +64,9 @@ def test_nvidia_sem_chave_levanta_erro(requisicoes, monkeypatch):
 
 def test_erro_http_inclui_o_motivo(monkeypatch):
     def urlopen_com_erro(requisicao, timeout):
-        raise urllib.error.HTTPError(requisicao.full_url, 404, "Not Found", None, io.BytesIO(b'{"detail": "modelo inexistente"}'))
+        raise urllib.error.HTTPError(
+            requisicao.full_url, 404, "Not Found", None, io.BytesIO(b'{"detail": "modelo inexistente"}')
+        )
 
     monkeypatch.setattr(llm.urllib.request, "urlopen", urlopen_com_erro)
     monkeypatch.setenv("LLM_PROVIDER", "nvidia")

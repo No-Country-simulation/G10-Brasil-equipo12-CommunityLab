@@ -8,7 +8,8 @@ def _opcoes(lista) -> str:
     return " | ".join(f'"{item}"' for item in lista)
 
 
-SYSTEM_PROMPT_ANALISE = """
+SYSTEM_PROMPT_ANALISE = (
+    """
 Você é o motor inteligente de curadoria do CommunityLab (Programa ONE - Grupo 10).
 Sua tarefa é analisar as interações orgânicas de uma comunidade digital (mensagens, depoimentos, dúvidas) e retornar a resposta EXATAMENTE no formato JSON estruturado, sem nenhum texto adicional, markdown de bloco fora do JSON ou comentários.
 
@@ -64,9 +65,11 @@ O JSON de saída deve seguir estritamente esta estrutura exata:
 }
 
 "ativos_recomendados" indica para quais ativos aquela interação serve de matéria-prima (lista vazia se nenhum).
-""".replace("<SENTIMENTOS>", _opcoes(ESCALA_SENTIMENTO)).replace(
-    "<TIPOS>", _opcoes(TIPOS_INTERACAO)
-).replace("<ATIVOS>", _opcoes(ATIVOS)).replace("<RELEVANCIAS>", _opcoes(RELEVANCIAS))
+""".replace("<SENTIMENTOS>", _opcoes(ESCALA_SENTIMENTO))
+    .replace("<TIPOS>", _opcoes(TIPOS_INTERACAO))
+    .replace("<ATIVOS>", _opcoes(ATIVOS))
+    .replace("<RELEVANCIAS>", _opcoes(RELEVANCIAS))
+)
 
 
 def construir_prompt_usuario(dados_limpos: dict) -> str:

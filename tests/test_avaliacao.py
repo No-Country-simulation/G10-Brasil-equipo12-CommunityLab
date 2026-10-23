@@ -8,39 +8,67 @@ from src.avaliacao import avaliar, comparar_topicos, main, mapear_ativo
 
 @pytest.fixture
 def exemplo():
-    casos = {"interacoes": [{
-        "id": "DEMO_01", "texto": "Consegui uma vaga!",
-        "tipo_esperado": "depoimento", "sentimento_esperado": "Muito positivo",
-        "topicos_esperados": ["Carreira", "IA"],
-        "ativo_esperado": "post de LinkedIn", "relevancia_esperada": "Alta",
-    }]}
-    resultado = {"status": "sucesso", "avisos": [], "analise_interacoes": [{
-        "id": "DEMO_01", "tipo": "depoimento", "sentimento": "Muito positivo",
-        "topicos": ["Carreira em IA"], "ativos_recomendados": ["post_linkedin"],
-        "relevancia": "Alta",
-    }], "ativos_distribuicao_gerados": {}}
+    casos = {
+        "interacoes": [
+            {
+                "id": "DEMO_01",
+                "texto": "Consegui uma vaga!",
+                "tipo_esperado": "depoimento",
+                "sentimento_esperado": "Muito positivo",
+                "topicos_esperados": ["Carreira", "IA"],
+                "ativo_esperado": "post de LinkedIn",
+                "relevancia_esperada": "Alta",
+            }
+        ]
+    }
+    resultado = {
+        "status": "sucesso",
+        "avisos": [],
+        "analise_interacoes": [
+            {
+                "id": "DEMO_01",
+                "tipo": "depoimento",
+                "sentimento": "Muito positivo",
+                "topicos": ["Carreira em IA"],
+                "ativos_recomendados": ["post_linkedin"],
+                "relevancia": "Alta",
+            }
+        ],
+        "ativos_distribuicao_gerados": {},
+    }
     return casos, resultado
 
 
-@pytest.mark.parametrize("texto, esperado", [
-    ("post de LinkedIn", "post_linkedin"), (" FAQ ", "faq"),
-    ("newsletter", "newsletter"), ("case de sucesso", "case_sucesso"),
-    ("sugestao_conteudo_faq", "faq"), ("case_sucesso", "case_sucesso"),
-    ("desconhecido", None), (None, None),
-])
+@pytest.mark.parametrize(
+    "texto, esperado",
+    [
+        ("post de LinkedIn", "post_linkedin"),
+        (" FAQ ", "faq"),
+        ("newsletter", "newsletter"),
+        ("case de sucesso", "case_sucesso"),
+        ("sugestao_conteudo_faq", "faq"),
+        ("case_sucesso", "case_sucesso"),
+        ("desconhecido", None),
+        (None, None),
+    ],
+)
 def test_mapeia_nomes_humanos_e_chaves(texto, esperado):
     assert mapear_ativo(texto) == esperado
 
 
-@pytest.mark.parametrize("esperados, previstos, recall", [
-    (["Autenticação", "OCI"], ["Erro de autenticacao"], 0.5),
-    (["API Groq"], ["Groq indisponível"], 1),
-    (["Material de estudo"], ["Material de apoio"], 1),
-    (["Carreira em IA"], ["IA"], 1),
-    (["Conquista para alunos"], ["Ajuda para mentores"], 0),
-    (["IA"], ["OCI"], 0),
-    (["FAQ"], [], 0), ([], ["FAQ"], 0),
-])
+@pytest.mark.parametrize(
+    "esperados, previstos, recall",
+    [
+        (["Autenticação", "OCI"], ["Erro de autenticacao"], 0.5),
+        (["API Groq"], ["Groq indisponível"], 1),
+        (["Material de estudo"], ["Material de apoio"], 1),
+        (["Carreira em IA"], ["IA"], 1),
+        (["Conquista para alunos"], ["Ajuda para mentores"], 0),
+        (["IA"], ["OCI"], 0),
+        (["FAQ"], [], 0),
+        ([], ["FAQ"], 0),
+    ],
+)
 def test_recall_de_topicos(esperados, previstos, recall):
     assert comparar_topicos(esperados, previstos) == recall
 
@@ -57,10 +85,15 @@ def test_acertos_sem_mutar_entradas(exemplo):
 
 def test_erros_e_tolerancia_nao_inflam_media(exemplo):
     casos, resultado = exemplo
-    resultado["analise_interacoes"][0].update({
-        "tipo": "feedback", "sentimento": "Positivo", "topicos": ["Carreira"],
-        "ativos_recomendados": ["faq"], "relevancia": "Baixa",
-    })
+    resultado["analise_interacoes"][0].update(
+        {
+            "tipo": "feedback",
+            "sentimento": "Positivo",
+            "topicos": ["Carreira"],
+            "ativos_recomendados": ["faq"],
+            "relevancia": "Baixa",
+        }
+    )
     avaliacao = avaliar(casos, resultado)
     assert avaliacao["metricas"]["sentimento"]["acuracia"] == 0
     assert avaliacao["metricas"]["sentimento_tolerante"]["acuracia"] == 1
@@ -76,13 +109,19 @@ def test_sentimento_distante_ou_invalido_nao_acerta(exemplo, sentimento):
 
 
 def test_campos_ausentes_nao_entram_no_denominador():
-    casos = {"interacoes": [
-        {"id": "A", "texto": "Olá", "relevancia_esperada": "Média"},
-        {"id": "B", "texto": "Oi", "topicos_esperados": []},
-    ]}
-    resultado = {"status": "parcial", "analise_interacoes": [
-        {"id": "A", "relevancia": "media"}, {"id": "B"},
-    ]}
+    casos = {
+        "interacoes": [
+            {"id": "A", "texto": "Olá", "relevancia_esperada": "Média"},
+            {"id": "B", "texto": "Oi", "topicos_esperados": []},
+        ]
+    }
+    resultado = {
+        "status": "parcial",
+        "analise_interacoes": [
+            {"id": "A", "relevancia": "media"},
+            {"id": "B"},
+        ],
+    }
     avaliacao = avaliar(casos, resultado)
     assert avaliacao["acuracia_media"] == 1
     assert avaliacao["metricas"]["tipo"]["total"] == 0
@@ -109,15 +148,21 @@ def test_caso_vazio_deve_ser_descartado(presente, acerto):
 
 
 def test_ids_gerados_e_duplicados_seguem_limpeza():
-    casos = {"interacoes": [
-        {"texto": "A", "tipo_esperado": "feedback"},
-        {"id": "X", "texto": "B", "tipo_esperado": "outro"},
-        {"id": "X", "texto": "C", "tipo_esperado": "depoimento"},
-    ]}
-    resultado = {"status": "sucesso", "analise_interacoes": [
-        {"id": "X_3", "tipo": "depoimento"},
-        {"id": "MSG_001", "tipo": "feedback"}, {"id": "X", "tipo": "outro"},
-    ]}
+    casos = {
+        "interacoes": [
+            {"texto": "A", "tipo_esperado": "feedback"},
+            {"id": "X", "texto": "B", "tipo_esperado": "outro"},
+            {"id": "X", "texto": "C", "tipo_esperado": "depoimento"},
+        ]
+    }
+    resultado = {
+        "status": "sucesso",
+        "analise_interacoes": [
+            {"id": "X_3", "tipo": "depoimento"},
+            {"id": "MSG_001", "tipo": "feedback"},
+            {"id": "X", "tipo": "outro"},
+        ],
+    }
     assert avaliar(casos, resultado)["acuracia_media"] == 1
 
 
@@ -125,9 +170,14 @@ def test_sem_expectativas_nao_inventa_acuracia():
     assert avaliar({"interacoes": []}, {"status": "erro"})["acuracia_media"] == 0
 
 
-@pytest.mark.parametrize("status, minimo, codigo", [
-    ("sucesso", "1", 0), ("parcial", "1", 0), ("erro", "0", 1),
-])
+@pytest.mark.parametrize(
+    "status, minimo, codigo",
+    [
+        ("sucesso", "1", 0),
+        ("parcial", "1", 0),
+        ("erro", "0", 1),
+    ],
+)
 def test_cli_resultado_salvo_sem_llm(exemplo, tmp_path, monkeypatch, capsys, status, minimo, codigo):
     from src import pipeline
 
@@ -143,8 +193,10 @@ def test_cli_resultado_salvo_sem_llm(exemplo, tmp_path, monkeypatch, capsys, sta
     copia = tmp_path / "copia.json"
     entrada.write_text(json.dumps(casos), encoding="utf-8")
     salvo.write_text(json.dumps(resultado), encoding="utf-8")
-    assert main(["--casos", str(entrada), "--resultado", str(salvo),
-                 "--salvar", str(copia), "--min-acuracia", minimo]) == codigo
+    assert (
+        main(["--casos", str(entrada), "--resultado", str(salvo), "--salvar", str(copia), "--min-acuracia", minimo])
+        == codigo
+    )
     assert json.loads(copia.read_text(encoding="utf-8")) == resultado
     saida = capsys.readouterr().out
     assert "DEMO_01" in saida and "100.0%" in saida
@@ -179,20 +231,25 @@ def test_cli_rejeita_limite_invalido(minimo):
     assert erro.value.code == 2
 
 
-@pytest.mark.parametrize("esperados, previstos, recall", [
-    (["IA"], ["Mentoria"], 0),
-    (["IA"], ["a"], 0),
-    (["Conquistas"], ["Conquista de vaga"], 1),
-])
+@pytest.mark.parametrize(
+    "esperados, previstos, recall",
+    [
+        (["IA"], ["Mentoria"], 0),
+        (["IA"], ["a"], 0),
+        (["Conquistas"], ["Conquista de vaga"], 1),
+    ],
+)
 def test_topicos_casam_por_palavra_inteira(esperados, previstos, recall):
     assert comparar_topicos(esperados, previstos) == recall
 
 
 def test_caso_vazio_com_id_de_caso_valido_nao_conta_como_falha():
-    casos = {"interacoes": [
-        {"id": "DEMO_01", "texto": "Passei!", "tipo_esperado": "depoimento"},
-        {"id": "DEMO_01", "texto": "   "},
-    ]}
+    casos = {
+        "interacoes": [
+            {"id": "DEMO_01", "texto": "Passei!", "tipo_esperado": "depoimento"},
+            {"id": "DEMO_01", "texto": "   "},
+        ]
+    }
     resultado = {"status": "sucesso", "analise_interacoes": [{"id": "DEMO_01", "tipo": "depoimento"}]}
     avaliacao = avaliar(casos, resultado)
     assert avaliacao["metricas"]["descarte"]["acuracia"] == 1

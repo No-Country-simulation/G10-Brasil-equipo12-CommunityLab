@@ -93,7 +93,9 @@ def _validar_analises(analises_raw, ids_esperados: list, avisos: list) -> list:
 
         ativos = []
         # Lista vazia é válida: a mensagem pode não servir para nenhum ativo
-        nomes = _lista_obrigatoria(item, "ativos_recomendados", f"{id_item}: ativos_recomendados", avisos, aceita_vazia=True)
+        nomes = _lista_obrigatoria(
+            item, "ativos_recomendados", f"{id_item}: ativos_recomendados", avisos, aceita_vazia=True
+        )
         for nome in nomes:
             chave = nomes_ativos.get(normalizar_texto(nome))
             if chave is None:
@@ -101,14 +103,16 @@ def _validar_analises(analises_raw, ids_esperados: list, avisos: list) -> list:
             elif chave not in ativos:
                 ativos.append(chave)
 
-        analises.append({
-            "id": id_item,
-            "tipo": tipo,
-            "sentimento": sentimento,
-            "topicos": _lista_obrigatoria(item, "topicos", f"{id_item}: topicos", avisos),
-            "ativos_recomendados": ativos,
-            "relevancia": relevancia,
-        })
+        analises.append(
+            {
+                "id": id_item,
+                "tipo": tipo,
+                "sentimento": sentimento,
+                "topicos": _lista_obrigatoria(item, "topicos", f"{id_item}: topicos", avisos),
+                "ativos_recomendados": ativos,
+                "relevancia": relevancia,
+            }
+        )
 
     for id_faltante in [i for i in ids_esperados if i not in vistos]:
         avisos.append(f"{id_faltante}: interação sem análise")
@@ -180,9 +184,7 @@ def validar_e_tratar_json(dados_json, dados_limpos: dict) -> dict:
         resumo_raw = {}
     sentimento_geral = casar_opcao(resumo_raw.get("sentimento_predominante"), ESCALA_SENTIMENTO)
     if resumo_valido and sentimento_geral is None:
-        avisos.append(
-            f"sentimento_predominante fora da escala ({resumo_raw.get('sentimento_predominante')!r})"
-        )
+        avisos.append(f"sentimento_predominante fora da escala ({resumo_raw.get('sentimento_predominante')!r})")
 
     topicos_principais = (
         _lista_obrigatoria(resumo_raw, "topicos_principais", "topicos_principais", avisos) if resumo_valido else []
