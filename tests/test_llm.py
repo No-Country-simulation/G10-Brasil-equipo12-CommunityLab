@@ -92,3 +92,27 @@ def test_provedor_desconhecido_levanta_erro(requisicoes, monkeypatch):
 
     with pytest.raises(ValueError, match="LLM_PROVIDER desconhecido"):
         llm.chamar_llm("sistema", "usuario")
+
+
+def test_erro_http_mascara_a_chave_e_le_so_o_comeco(monkeypatch):
+    lidos = []
+
+    class CorpoGrande(io.BytesIO):
+        def read(self, tamanho=-1):
+            lidos.append(tamanho)
+            return super().read(tamanho)
+
+    def urlopen_com_erro(requisicao, timeout):
+        corpo = CorpoGrande(b'{"detail": "Invalid API key: nvapi-secreta"}' + b" " * 1_000_000)
+        raise urllib.error.HTTPError(requisicao.full_url, 401, "Unauthorized", None, corpo)
+
+    monkeypatch.setattr(llm.urllib.request, "urlopen", urlopen_com_erro)
+    monkeypatch.setenv("LLM_PROVIDER", "nvidia")
+    monkeypatch.setenv("NVIDIA_API_KEY", "nvapi-secreta")
+
+    with pytest.raises(RuntimeError) as erro:
+        llm.chamar_llm("sistema", "usuario")
+
+    assert "nvapi-secreta" not in str(erro.value)
+    assert "Invalid API key: ***" in str(erro.value)
+    assert lidos and all(0 < tamanho <= 2000 for tamanho in lidos)

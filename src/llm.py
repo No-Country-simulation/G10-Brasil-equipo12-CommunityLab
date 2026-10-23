@@ -32,7 +32,7 @@ def _mensagens(system_prompt: str, prompt_usuario: str) -> list:
     ]
 
 
-def _post_json(url: str, corpo: dict, cabecalhos: dict, timeout: int) -> dict:
+def _post_json(url: str, corpo: dict, cabecalhos: dict, timeout: int, segredo: str = "") -> dict:
     requisicao = urllib.request.Request(
         url,
         data=json.dumps(corpo).encode("utf-8"),
@@ -42,8 +42,11 @@ def _post_json(url: str, corpo: dict, cabecalhos: dict, timeout: int) -> dict:
         with urllib.request.urlopen(requisicao, timeout=timeout) as resposta:
             return json.load(resposta)
     except urllib.error.HTTPError as erro:
-        # O corpo do erro explica o motivo (modelo inexistente, chave inválida...)
-        detalhe = erro.read().decode("utf-8", "replace")[:300]
+        # O corpo do erro explica o motivo (modelo inexistente, chave inválida...).
+        # Lê só o começo e mascara a chave, caso o servidor a repita na mensagem.
+        detalhe = erro.read(2000).decode("utf-8", "replace")[:300]
+        if segredo:
+            detalhe = detalhe.replace(segredo, "***")
         raise RuntimeError(f"{url} respondeu {erro.code}: {detalhe}") from erro
 
 
@@ -79,7 +82,7 @@ def _chamar_nvidia(system_prompt: str, prompt_usuario: str) -> str:
         # Sem limite explícito, respostas longas podem vir cortadas
         "max_tokens": 4096,
     }
-    resposta = _post_json(url, corpo, {"Authorization": f"Bearer {api_key}"}, timeout=180)
+    resposta = _post_json(url, corpo, {"Authorization": f"Bearer {api_key}"}, timeout=180, segredo=api_key)
     return resposta["choices"][0]["message"]["content"]
 
 
