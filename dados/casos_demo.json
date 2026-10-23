@@ -10,7 +10,9 @@
       "tipo_esperado": "depoimento",
       "texto": "Pessoal, passei no processo seletivo para Desenvolvedora Júnior de IA!",
       "topicos_esperados": ["Conquistas", "Carreira", "IA"],
-      "ativo_esperado": "post de LinkedIn"
+      "sentimento_esperado": "Muito positivo",
+      "ativo_esperado": "post de LinkedIn",
+      "relevancia_esperada": "Alta"
     },
     {
       "id": "DEMO_02",
@@ -20,7 +22,9 @@
       "tipo_esperado": "pergunta_tecnica",
       "texto": "Alguém conseguiu conectar a API da Groq no OCI sem dar erro de autenticação?",
       "topicos_esperados": ["API Groq", "OCI", "Autenticação"],
-      "ativo_esperado": "FAQ"
+      "sentimento_esperado": "Negativo",
+      "ativo_esperado": "FAQ",
+      "relevancia_esperada": "Média"
     },
     {
       "id": "DEMO_03",
@@ -30,7 +34,9 @@
       "tipo_esperado": "feedback",
       "texto": "O material da Sprint 1 ficou excelente, mas a parte de JSON poderia ter mais exemplos.",
       "topicos_esperados": ["Feedback", "Material de Estudo", "Sprint 1"],
-      "ativo_esperado": "newsletter"
+      "sentimento_esperado": "Positivo",
+      "ativo_esperado": "newsletter",
+      "relevancia_esperada": "Média"
     }
   ]
 }
