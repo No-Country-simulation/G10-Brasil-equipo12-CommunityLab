@@ -1,5 +1,7 @@
 # G10-Brasil-equipo12-CommunityLab
 
+[![Testes](https://github.com/No-Country-simulation/G10-Brasil-equipo12-CommunityLab/actions/workflows/testes.yml/badge.svg)](https://github.com/No-Country-simulation/G10-Brasil-equipo12-CommunityLab/actions/workflows/testes.yml)
+
 ## 🏛️ Arquitetura do Sistema
 
 O fluxo de dados do **CommunityLab** segue a seguinte estrutura:
@@ -63,8 +65,10 @@ Avaliar o pipeline contra os casos de `dados/casos_demo.json`:
 python -m src.avaliacao
 ```
 
-Rodar os testes automatizados (não chamam a LLM):
+Rodar os testes automatizados (não chamam a LLM) e conferir lint e formatação, como o GitHub Actions faz em cada Pull Request:
 
 ```bash
-python -m pytest
+pytest
+ruff check src tests
+ruff format --check src tests   # sem --check, formata os arquivos
 ```
