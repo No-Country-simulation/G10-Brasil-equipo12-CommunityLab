@@ -1,0 +1,406 @@
+{
+  "origem_comunidade": "Discord_Grupo_ONE_G10",
+  "periodo_referencia": "Semana_04",
+  "interacoes": [
+    {
+      "id": "MSG_001",
+      "autor": "Camila Duarte",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
+      "texto": "Gente, saiu o resultado: fui aprovada como Analista de Dados Júnior! O projeto de portfólio com Pandas e análise de sentimento que fiz no curso foi o assunto principal da entrevista. Obrigada a todo mundo que revisou meu repositório!",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_002",
+      "autor": "Rafael Tavares",
+      "canal": "#duvidas-langgraph",
+      "tipo": "pergunta_tecnica",
+      "texto": "Alguém sabe como configurar um retry no nó condicional do LangGraph quando a LLM devolve um JSON quebrado? Estou tentando com um router, mas ele só tenta uma vez.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_003",
+      "autor": "Patrícia Nogueira",
+      "canal": "#feedback-geral",
+      "tipo": "feedback",
+      "texto": "A aula de engenharia de prompts foi a melhor até agora. Os exemplos de few-shot deixaram tudo mais claro pra mim.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_004",
+      "autor": "Thiago Brandt",
+      "canal": "#geral",
+      "tipo": "interacao_geral",
+      "texto": "Bom dia, pessoal! Alguém vai participar do encontro ao vivo de quinta?",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_005",
+      "autor": "Juliana Reis",
+      "canal": "#suporte-oci",
+      "tipo": "pergunta_tecnica",
+      "texto": "Estou empacada na criação do bucket no Object Storage. Aparece um erro de permissão quando tento enviar um arquivo. Preciso configurar alguma policy específica?",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_006",
+      "autor": "Diego Furtado",
+      "canal": "#projetos-alunos",
+      "tipo": "depoimento",
+      "texto": "Terminei meu primeiro chatbot com Streamlit e já coloquei no ar! Ficou simples, mas funcionando. Valeu pela força de quem me ajudou nos erros de deploy.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_007",
+      "autor": "Larissa Campos",
+      "canal": "#geral",
+      "tipo": "interacao_geral",
+      "texto": "Alguém tem dica de um bom material para estudar SQL em paralelo ao curso?",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_008",
+      "autor": "Marcelo Pires",
+      "canal": "#feedback-geral",
+      "tipo": "feedback",
+      "texto": "Achei o ritmo das aulas dessa semana corrido demais. Muita coisa nova em pouco tempo e fiquei perdido na parte de agentes.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_009",
+      "autor": "Bianca Lopes",
+      "canal": "#duvidas-langgraph",
+      "tipo": "pergunta_tecnica",
+      "texto": "Como estruturar os nós condicionais no LangGraph para separar mensagens positivas de dúvidas? Alguém tem um exemplo prático de router?",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_010",
+      "autor": "Gustavo Prado",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
+      "texto": "Recebi uma proposta para estágio em engenharia de dados! Tudo começou quando publiquei no GitHub meu pipeline com bucket na nuvem. Vale muito mostrar o que a gente constrói.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_011",
+      "autor": "Elisa Menezes",
+      "canal": "#geral",
+      "tipo": "interacao_geral",
+      "texto": "Estou com dificuldade de acompanhar as aulas porque trabalho o dia todo. Já pensei em largar, mas queria muito terminar. Alguém passou por isso?",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_012",
+      "autor": "Vinícius Araújo",
+      "canal": "#duvidas-gerais",
+      "tipo": "pergunta_tecnica",
+      "texto": "A LLM está respondendo com texto antes do JSON e quebrando meu parser. Como forçar a saída só em JSON?",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_013",
+      "autor": "Natália Ferraz",
+      "canal": "#geral",
+      "tipo": "interacao_geral",
+      "texto": "Montei uma planilha de cronograma de estudos e posso compartilhar com quem quiser!",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_014",
+      "autor": "Rodrigo Salles",
+      "canal": "#feedback-geral",
+      "tipo": "feedback",
+      "texto": "Seria legal ter mais exercícios práticos com dados reais depois de cada módulo.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_015",
+      "autor": "Fernanda Lacerda",
+      "canal": "#suporte-oci",
+      "tipo": "pergunta_tecnica",
+      "texto": "A camada Always Free do Object Storage cobra alguma coisa se eu passar do limite? Não quero tomar susto na fatura.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_016",
+      "autor": "Henrique Barros",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
+      "texto": "Fechei meu primeiro freela de automação! Usei n8n com Webhook para ligar um formulário a uma planilha. O cliente adorou.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_017",
+      "autor": "Pedro_Alves99",
+      "canal": "#geral",
+      "tipo": "interacao_geral",
+      "texto": "",
+      "cenario": "vazio"
+    },
+    {
+      "id": "MSG_018",
+      "autor": "Valéria Antunes",
+      "canal": "#feedback-geral",
+      "tipo": "feedback",
+      "texto": "Adorei o encontro com os mentores, tirei dúvidas que estavam me travando há dias!",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_019",
+      "autor": "Otávio Mendes",
+      "canal": "#duvidas-langgraph",
+      "tipo": "pergunta_tecnica",
+      "texto": "No LangGraph, como faço o grafo voltar para o nó anterior quando a validação do JSON falha? Quero limitar a 3 tentativas.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_020",
+      "autor": "Thiago Brandt",
+      "canal": "#geral",
+      "tipo": "interacao_geral",
+      "texto": "Bom dia, pessoal! Alguém vai participar do encontro ao vivo de quinta?",
+      "cenario": "duplicado"
+    },
+    {
+      "id": "MSG_021",
+      "autor": "Priscila Moreira",
+      "canal": "#projetos-alunos",
+      "tipo": "depoimento",
+      "texto": "Meu projeto de dashboard de sentimento foi escolhido para apresentação na semana de demonstração da turma! Nunca imaginei que ia chegar tão longe.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_022",
+      "autor": "Leandro Cortez",
+      "canal": "#duvidas-gerais",
+      "tipo": "pergunta_tecnica",
+      "texto": "Alguém sabe por que o Streamlit recarrega a página toda vez que clico num botão? Queria aprovar um item sem perder o resto da tela.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_023",
+      "autor": "luan_dev22",
+      "canal": "#suporte-oci",
+      "tipo": "pergunta_tecnica",
+      "texto": "vcs sabem pq o bucket da erro 403 qd subo o json??? ja tentei d tudo kkkk 😭",
+      "cenario": "ruido"
+    },
+    {
+      "id": "MSG_024",
+      "autor": "Aline Cavalcanti",
+      "canal": "#feedback-geral",
+      "tipo": "feedback",
+      "texto": "Os materiais de apoio estão ótimos, mas a plataforma travou duas vezes durante a prova.",
+      "cenario": "sentimento_misto"
+    },
+    {
+      "id": "MSG_025",
+      "autor": "Sérgio Dantas",
+      "canal": "#geral",
+      "tipo": "interacao_geral",
+      "texto": "Quem quiser montar um grupo de estudo para o desafio do hackathon, me chama no privado!",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_026",
+      "autor": "Rita Bezerra",
+      "canal": "#projetos-alunos",
+      "tipo": "depoimento",
+      "texto": "Pessoal, consegi finalmente rodar o pipelne aqui!!! Mt feliz, so falta salvar no bucket",
+      "cenario": "erro_digitacao"
+    },
+    {
+      "id": "MSG_027",
+      "autor": "Matheus Queiroz",
+      "canal": "#duvidas-gerais",
+      "tipo": "pergunta_tecnica",
+      "texto": "Qual a melhor forma de dar exemplos few-shot no prompt para o modelo seguir o tom de voz do LinkedIn?",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_028",
+      "autor": "Sabrina Fonseca",
+      "canal": "#duvidas-gerais",
+      "tipo": "pergunta_tecnica",
+      "texto": "Estou há três dias travada no mesmo erro e começando a achar que não levo jeito pra isso. Alguém pode olhar meu código?",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_029",
+      "autor": "Caio Nascimento",
+      "canal": "#feedback-geral",
+      "tipo": "feedback",
+      "texto": "O roteiro de estudos ficou muito claro e as aulas gravadas ajudam demais quando perco o horário ao vivo.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_030",
+      "autor": "Kauê_Dias",
+      "canal": "#geral",
+      "tipo": "interacao_geral",
+      "texto": "🔥🔥🔥👏👏",
+      "cenario": "so_emojis"
+    },
+    {
+      "id": "MSG_031",
+      "autor": "Isabela Rangel",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
+      "texto": "Hoje completei 100 dias estudando programação todos os dias! Comecei sem saber nada de Python e agora estou montando APIs. Obrigada pela comunidade!",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_032",
+      "autor": "Fabrício Leal",
+      "canal": "#duvidas-gerais",
+      "tipo": "pergunta_tecnica",
+      "texto": "Como lidar com limite de requisições quando uso a API gratuita de um provedor de LLM? Meu script para no meio do lote.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_033",
+      "autor": "Tainá Vasconcelos",
+      "canal": "#geral",
+      "tipo": "interacao_geral",
+      "texto": "Vocês preferem estudar de manhã ou de noite? Eu rendo muito mais depois das 21h.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_034",
+      "autor": "Ricardo Aguiar",
+      "canal": "#feedback-geral",
+      "tipo": "feedback",
+      "texto": "Senti falta de um guia passo a passo para configurar a nuvem. Perdi horas só na parte de autenticação.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_035",
+      "autor": "Bianca Lopes",
+      "canal": "#duvidas-langgraph",
+      "tipo": "pergunta_tecnica",
+      "texto": "Como estruturar os nós condicionais no LangGraph para separar mensagens positivas de dúvidas? Alguém tem um exemplo prático de router?",
+      "cenario": "duplicado"
+    },
+    {
+      "id": "MSG_036",
+      "autor": "Eduardo_M",
+      "canal": "#duvidas-gerais",
+      "tipo": "pergunta_tecnica",
+      "texto": "MEU DEPLOY NÃO SOBE DE JEITO NENHUM!!! JÁ TENTEI TUDO",
+      "cenario": "caixa_alta"
+    },
+    {
+      "id": "MSG_037",
+      "autor": "Lorena Matos",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
+      "texto": "Fui chamada para a segunda etapa de um processo seletivo para Desenvolvedora de IA! Ainda não é a vaga, mas já foi um passo enorme. Obrigada pelas simulações de entrevista.",
+      "cenario": "cuidado_com_fatos"
+    },
+    {
+      "id": "MSG_038",
+      "autor": "Anderson Faria",
+      "canal": "#suporte-oci",
+      "tipo": "pergunta_tecnica",
+      "texto": "Quais permissões mínimas preciso dar ao usuário que só vai gravar arquivos no bucket?",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_039",
+      "autor": "Nathan_Silva",
+      "canal": "#projetos-alunos",
+      "tipo": "depoimento",
+      "texto": "Guys, my pipeline is finally running! Ficou lindo o output em JSON, thanks to the mentors 🙌",
+      "cenario": "misto_idioma"
+    },
+    {
+      "id": "MSG_040",
+      "autor": "Beatriz Quintana",
+      "canal": "#geral",
+      "tipo": "interacao_geral",
+      "texto": "Alguém sabe se vai ter gravação do encontro de ontem? Não consegui entrar.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_041",
+      "autor": "Vanessa Torres",
+      "canal": "#duvidas-langgraph",
+      "tipo": "feedback",
+      "texto": "Pessoal,\n\n   queria agradecer a ajuda   de ontem   sobre o     LangGraph.\n\n\nConsegui resolver o retry!",
+      "cenario": "espacos_e_quebras"
+    },
+    {
+      "id": "MSG_042",
+      "autor": "Yago Pacheco",
+      "canal": "#projetos-alunos",
+      "tipo": "depoimento",
+      "texto": "Publiquei meu primeiro projeto: https://example.com/meu-projeto. Aceito sugestões de melhoria!",
+      "cenario": "com_link"
+    },
+    {
+      "id": "MSG_043",
+      "autor": "Wellington_T",
+      "canal": "#geral",
+      "tipo": "interacao_geral",
+      "texto": "ok",
+      "cenario": "ambiguo"
+    },
+    {
+      "id": "MSG_044",
+      "autor": "Daniela Siqueira",
+      "canal": "#duvidas-gerais",
+      "tipo": "pergunta_tecnica",
+      "texto": "Como separar o texto da LLM em campos fixos, como título, copy e hashtags, para montar o post do LinkedIn?",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_045",
+      "autor": "Márcio Teles",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
+      "texto": "Consegui reduzir de 3 horas para 20 minutos o relatório semanal da minha equipe usando um script em Python. Meu gestor pediu para eu ensinar o resto do time.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_046",
+      "autor": "Simone Arruda",
+      "canal": "#feedback-geral",
+      "tipo": "feedback",
+      "texto": "Podiam colocar legenda nos vídeos. Ajudaria muito quem estuda no trabalho sem fone.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_047",
+      "autor": "Jéssica Valadão",
+      "canal": "#geral",
+      "tipo": "interacao_geral",
+      "texto": "Que energia boa nessa comunidade! Todo mundo ajudando todo mundo.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_048",
+      "autor": "Ismael Rocha",
+      "canal": "#duvidas-gerais",
+      "tipo": "pergunta_tecnica",
+      "texto": "Dúvida: onde devo guardar a chave da API para não subir sem querer para o GitHub?",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_049",
+      "autor": "Tatiane Borges",
+      "canal": "#geral",
+      "tipo": "interacao_geral",
+      "texto": "Semana puxada no trabalho e não consegui estudar nada. Sinto que estou ficando para trás da turma.",
+      "cenario": "limpo"
+    },
+    {
+      "id": "MSG_050",
+      "autor": "Wagner Lima",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
+      "texto": "Acabei de subir meu primeiro pacote de arquivos no bucket pela linha de comando. Parece pouca coisa, mas para mim foi enorme!",
+      "cenario": "limpo"
+    }
+  ]
+}
