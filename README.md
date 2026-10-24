@@ -1,21 +1,309 @@
 # G10-Brasil-equipo12-CommunityLab
 
-## 🏛️ Arquitetura do Sistema
+## CommunityLab 🤖💬
 
-O fluxo de dados do **CommunityLab** segue a seguinte estrutura:
+> Motor Inteligente de Transformação e Distribuição para Comunidades Digitais
 
-1. **Entrada:** Captura de mensagens do Discord ou PDFs de relatórios.
-2. **Motor de Ingestão:** Pré-processamento e limpeza dos dados brutos.
-3. **Processamento IA:** Categorização e análise de sentimento via Gemini e LangGraph.
-4. **Distribuição & Armazenamento:** Envio para canais específicos e gravação na Oracle Cloud (OCI).
+**Hackathon ONE G10 · Oracle Next Education & Alura · Equipe G10-BRASIL-equipo 12**
+
+<!--
+  README ÚNICO: junta o que estava nos PRs #4, #6 e #9, o esqueleto de seções e as decisões do time.
+  Comentários como este não aparecem no GitHub. Seções com 🚧 ainda não têm conteúdo.
+  Nunca colocar chaves de API, e-mails pessoais ou dados da conta OCI: o repositório é público.
+-->
+
+---
+
+## 📝 1. Visão Geral do Projeto
+
+O **CommunityLab** é um motor que lê as conversas de uma comunidade digital (por exemplo, no Discord), entende o que está acontecendo nelas e transforma as melhores histórias e dúvidas em conteúdos prontos para publicar, como posts de LinkedIn, destaques de newsletter e dicas de FAQ.
+
+Os resultados são salvos no **OCI Object Storage** (camada Always Free) e passam por uma interface de curadoria, onde uma pessoa revisa antes de publicar.
+
+Este projeto responde ao desafio **"Projeto 3 – CommunityLab"** do Hackathon ONE G10.
+
+## 🚨 2. O Problema
+
+Comunidades digitais geram todos os dias histórias inspiradoras, dúvidas recorrentes e feedbacks valiosos. A maior parte desse valor se perde no histórico dos canais, porque a curadoria e a produção manual de conteúdo consomem muitas horas das equipes de Community Management e de Marketing.
+
+## 🎯 3. Objetivos do MVP
+
+Requisitos mínimos do desafio:
+
+- [ ] Ingestão funcional de interações da comunidade (mensagens, CSV ou JSON simulando canais)
+- [ ] Análise de sentimento e extração de tópicos com LLM
+- [ ] Geração automatizada de pelo menos 2 formatos de ativos de marketing
+- [ ] Orquestração do fluxo com Python ou ferramenta equivalente
+- [ ] Integração ativa com o OCI Object Storage (camada Always Free)
+- [ ] Demonstração de no mínimo 3 exemplos de transformação de interações em ativos
+- [ ] Repositório no GitHub com documentação e diagrama da esteira de distribuição
+
+## 👥 4. Público-Alvo e Casos de Uso
+
+**Setor:** MarTech, gestão de comunidades digitais, marketing de conteúdo e engajamento.
+
+**Quem se beneficia:** comunidades de aprendizagem, ecossistemas de desenvolvedores, empresas SaaS e criadores de conteúdo. No dia a dia, quem usa são as equipes de Community Management e de Marketing.
+
+**Casos de uso do MVP:**
+
+| Quando a mensagem é... | O sistema gera... |
+| :--- | :--- |
+| Um depoimento ou conquista | **Case de Sucesso:** post de LinkedIn e destaque de newsletter |
+| Uma dúvida técnica | **Dica ou FAQ**, encaminhada para mentoria |
+| Um feedback | Entra nas **métricas gerais** de satisfação |
+
+## ⚙️ 5. Arquitetura do Pipeline e Fluxo dos Dados
+
+O fluxo de dados do **CommunityLab** segue estas etapas:
 
 ```mermaid
 graph TD
-    A[Entrada: Discord / PDF] --> B[Motor de Ingestão]
-    B --> C[Processamento IA - Gemini & LangGraph]
-    C --> D{Classificação}
-    D -->|Depoimento| E[Canal de Destaques]
-    D -->|Dúvida Técnica| F[Suporte / Mentores]
-    D -->|Feedback| G[Métricas Gerais]
-    C --> H[Armazenamento - Oracle Cloud OCI]
-'''
+    A["Entrada: mensagens da comunidade (JSON ou CSV)"] --> B["Ingestão e limpeza"]
+    B --> C["Análise com LLM: sentimento, tópicos e relevância"]
+    C --> D{"Roteamento por tipo"}
+    D -->|Depoimento| E["Case de Sucesso: post LinkedIn e destaque de newsletter"]
+    D -->|Dúvida técnica| F["Dica ou FAQ encaminhada para mentoria"]
+    D -->|Feedback| G["Métricas gerais de satisfação"]
+    E --> H["Curadoria e aprovação (Streamlit)"]
+    F --> H
+    G --> I["OCI Object Storage"]
+    H --> I
+```
+
+### Etapas e situação atual
+
+| # | Etapa | O que faz | Módulo | Situação |
+| :-: | :--- | :--- | :--- | :--- |
+| 1 | Ingestão e validação | Lê o lote de mensagens (JSON ou CSV) e confere o formato | `src/ingestao.py` (leitura); `schemas.py` (validação, planejado) | Leitura: código inicial. Validação: 📝 planejada |
+| 2 | Limpeza | Remove mensagens vazias e padroniza o texto | `src/limpeza.py` | Código inicial |
+| 3 | Análise com LLM | Pede à LLM sentimento, tópicos e relevância, em JSON | `src/prompts.py`, `src/teste_execucao.py` (script de teste); `ia_service.py` (planejado) | 🚧 Em andamento |
+| 4 | Resumo e roteamento | Resume a comunidade e decide o caminho de cada mensagem | `roteador.py` | 📝 Planejado |
+| 5 | Geração de ativos | Gera um conteúdo por canal, com o tom de voz de cada um | Pasta `prompts/`; `ativos.py` | 📝 Planejado |
+| 6 | Curadoria e aprovação | Uma pessoa revisa e aprova na interface | Streamlit | 📝 Planejado |
+| 7 | Armazenamento | Salva o pacote final no bucket da OCI | `src/oracle_storage.py` (função `salvar_no_oci`) | ✅ Função pronta e testada com upload real. ⏳ Falta ligá-la ao pipeline |
+
+A validação do JSON devolvido pela LLM, com valores de segurança (fallback), já existe em `src/validacao.py`.
+
+**Ponto de entrada único (sugestão):** uma função `processar_lote(lote)` que executa as etapas 1 a 5. Assim, tanto uma API quanto o Streamlit podem chamar a mesma lógica, e dá para testar sem subir servidor.
+
+**Quando algo falha:**
+
+| Problema | Reação planejada |
+| :--- | :--- |
+| Lote fora do formato | A validação recusa e informa qual campo está errado |
+| Mensagem vazia | A limpeza descarta (já implementado) |
+| Mensagem duplicada | A limpeza deve descartar (planejado: a limpeza atual ainda não remove duplicatas) |
+| A LLM responde fora do formato JSON | Valida, tenta de novo algumas vezes e, se continuar falhando, registra o erro e segue com as demais mensagens |
+| A LLM inventa fatos | Regra nos prompts: só usar fatos que aparecem na mensagem original |
+| Falha ao salvar na OCI | Implementado em `salvar_no_oci`: devolve `status: falha_ao_salvar` e o tipo do erro, sem expor dados da configuração |
+
+**Fica para depois do MVP:** RAG e embeddings, execução diária automática (cron), Webhook do Discord, geração de imagens e deploy completo.
+
+## 🛠️ 6. Tecnologias Utilizadas
+
+### Decisões do time (registradas em 21/10/2026)
+
+- **Modelo (LLM):** GPT-OSS 120B (`openai/gpt-oss-120b`), da OpenAI
+- **Provedor:** Groq (plano gratuito)
+- **Interface:** Streamlit
+
+| Parte | Tecnologia | Situação |
+| :--- | :--- | :--- |
+| Linguagem | Python | Em uso |
+| Modelo de IA | `openai/gpt-oss-120b` | Em uso nos scripts de teste |
+| Provedor do modelo | Groq (biblioteca `groq`) | Em uso nos scripts de teste |
+| Variáveis de ambiente | `python-dotenv` | Em uso |
+| Interface de curadoria | Streamlit | Decidido, ainda não implementado |
+| Armazenamento | OCI Object Storage (camada Always Free), via SDK Python `oci` | Função `salvar_no_oci` pronta e testada; falta ligá-la ao pipeline |
+| Dependências | `requirements.txt` (`groq`, `python-dotenv`, `oci`) | Em uso |
+| Previstos no desenho do time | FastAPI, Pydantic, Pandas e LangChain | Ainda não usados no código |
+| Versionamento | GitHub, com branches e Pull Requests | Em uso |
+
+> Usamos **somente recursos da camada Always Free** da OCI, conforme exige o programa ONE.
+
+## 📊 7. Mapeamento e Tipos de Mensagem (Dataset)
+
+O motor categoriza as interações da comunidade em 4 tipos principais:
+
+| Tipo | Descrição |
+| :--- | :--- |
+| `depoimento` | Relatos de conquistas, aprovações em vagas e casos de sucesso dos alunos |
+| `pergunta_tecnica` | Dúvidas sobre código, frameworks (LangGraph, OCI, Gemini) ou infraestrutura |
+| `feedback` | Sugestões, elogios e críticas sobre a dinâmica do programa |
+| `interacao_geral` | Debates espontâneos e conversas informais nos canais |
+
+**Arquivos de dados:**
+
+- [`dados/mensagens_exemplo.json`](dados/mensagens_exemplo.json): mensagens de exemplo
+- [`dados/casos_demo.json`](dados/casos_demo.json): casos de demonstração, incluindo dados com sujeira (mensagem vazia, repetida, com erros de digitação, com ruído e texto curto e ambíguo)
+- [`docs/resultados_esperados.md`](docs/resultados_esperados.md): tabela de resultados esperados dos casos de demonstração
+
+<!-- Confirmar a lista oficial de tipos: dados/mensagens_exemplo.json também usa "entrega_projeto".
+     Em dados/casos_demo.json, "tipo" é o campo lido pelo motor e "tipo_esperado" fica como gabarito. -->
+
+## 📋 8. Formato de Entrada e Ingestão (JSON / CSV)
+
+O arquivo de entrada tem uma origem, um período e uma lista de interações:
+
+```json
+{
+  "origem_comunidade": "Discord_Grupo_ONE_G10",
+  "periodo_referencia": "Semana_04",
+  "interacoes": [
+    {
+      "autor": "Mariana Souza",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
+      "texto": "Pessoal, passei no processo seletivo para Desenvolvedora Júnior de IA!"
+    }
+  ]
+}
+```
+
+| Campo | O que é |
+| :--- | :--- |
+| `origem_comunidade` | De onde vieram as mensagens |
+| `periodo_referencia` | Período analisado |
+| `autor` | Quem escreveu |
+| `canal` | Canal de origem |
+| `tipo` | Um dos tipos da seção 7 |
+| `texto` | Conteúdo bruto da mensagem |
+
+Em **CSV**, as colunas são `autor`, `canal`, `tipo` e `texto`.
+
+<!-- O desafio lista como formas de ingestão: JSON, CSV, Webhook ou integração com plataformas.
+     A versão anterior citava PDF como entrada. Confirmar se era intencional antes de incluir. -->
+
+## 🔄 9. Exemplos de Transformação (antes → depois)
+
+🚧 em construção
+
+<!-- O desafio pede no mínimo 3 exemplos. Formato sugerido para cada um:
+
+### Exemplo 1: [nome]
+**Mensagem original:** ...
+**Análise:** sentimento, tópicos, relevância
+**Ativo gerado:** ...
+-->
+
+## 🖥️ 10. Interface de Curadoria e Validação
+
+A interface será feita em **Streamlit**. A ideia é mostrar o resumo da comunidade (sentimento e tópicos), os conteúdos gerados e permitir que uma pessoa revise e aprove antes de publicar.
+
+🚧 em construção (previsto para a Sprint 4)
+
+## ☁️ 11. Armazenamento na Nuvem (Oracle Cloud - OCI)
+
+Os pacotes de conteúdo gerados são salvos em um bucket do **OCI Object Storage**, na camada **Always Free**, em arquivos JSON organizados por período. Padrão de caminho do exemplo do desafio:
+
+```
+ativos/2026-semana-04/pacote-distribuicao.json
+```
+
+**Como funciona (`src/oracle_storage.py`):**
+
+1. A função `salvar_no_oci(pacote, periodo_referencia)` lê a configuração da OCI de um arquivo **fora do repositório** (padrão `~/.oci/config`).
+2. Conecta ao Object Storage pelo SDK Python (`oci`) e descobre o namespace da conta.
+3. Grava o pacote em JSON no caminho do período (`Semana_04` vira `ativos/2026-semana-04/pacote-distribuicao.json`).
+4. Devolve o bloco `armazenamento_oci` (`bucket`, `caminho_objeto` e `status`). Em caso de erro, devolve `status: falha_ao_salvar` e o tipo do erro, sem dados da configuração.
+
+**Variáveis opcionais** no `.env` (valores padrão entre parênteses): `OCI_BUCKET` (`communitylab-ativos-marketing`), `OCI_CONFIG_FILE` (`~/.oci/config`) e `OCI_PROFILE` (`DEFAULT`).
+
+**Situação:** a função foi testada com um upload real no bucket. Ainda falta ligá-la ao final do pipeline.
+
+<!-- Não colocar chaves, OCIDs, namespace nem configurações de conta. -->
+
+## 🚀 12. Guia Passo a Passo de Implantação
+
+Este guia cobre o que já existe no repositório: a leitura, a limpeza, a análise com a LLM e o teste de envio para a OCI. A interface (Streamlit) e a ligação do envio ao pipeline serão acrescentadas quando estiverem prontas.
+
+**1. Pré-requisitos**
+
+- Python 3 e Git instalados
+- Uma chave de API da Groq (plano gratuito)
+- Para o teste de envio à OCI (passo 8): uma conta Oracle Cloud com um bucket Always Free e o arquivo de configuração da OCI
+
+**2. Clonar o repositório**
+
+```bash
+git clone https://github.com/No-Country-simulation/G10-Brasil-equipo12-CommunityLab.git
+cd G10-Brasil-equipo12-CommunityLab
+```
+
+**3. Criar e ativar o ambiente virtual**
+
+```bash
+python -m venv .venv
+```
+
+- Windows: `.venv\Scripts\activate`
+- macOS e Linux: `source .venv/bin/activate`
+
+**4. Instalar as dependências**
+
+```bash
+pip install -r requirements.txt
+```
+
+**5. Configurar a chave de API**
+
+Copie o arquivo de exemplo e preencha a chave. O arquivo `.env` **nunca** deve ser enviado ao GitHub (ele já está no `.gitignore`).
+
+- Windows: `copy .env.example .env`
+- macOS e Linux: `cp .env.example .env`
+
+Abra o `.env` e troque `cole_sua_chave_aqui` pela sua chave, na variável `GROQ_API_KEY`. As variáveis `OCI_*` já vêm com valores padrão e só precisam mudar se o seu bucket, arquivo ou perfil tiverem outros nomes.
+
+**6. Testar a conexão com o modelo (opcional)**
+
+```bash
+python src/teste_groq.py
+```
+
+O modelo deve responder algo como "Funcionando com sucesso!".
+
+**7. Rodar o pipeline de teste**
+
+Na pasta raiz do projeto:
+
+```bash
+python -m src.teste_execucao
+```
+
+O script lê `dados/mensagens_exemplo.json`, faz a limpeza, envia para a Groq (modelo `openai/gpt-oss-120b`), valida a resposta e imprime o JSON final. Ele ainda não envia o resultado para a OCI.
+
+**8. Testar o envio para a OCI (opcional)**
+
+Antes, é preciso ter um bucket Always Free e um arquivo de configuração da OCI (em `~/.oci/config`, com `user`, `fingerprint`, `key_file`, `tenancy` e `region`). Siga a [documentação oficial da Oracle](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm). **Esse arquivo e a chave privada ficam fora do projeto e nunca vão para o GitHub.**
+
+```bash
+python -c "from src.oracle_storage import salvar_no_oci; print(salvar_no_oci({'teste': 'ola'}, 'Semana_Teste'))"
+```
+
+O resultado esperado é `'status': 'salvo_com_sucesso'`. Use um período de teste (como `Semana_Teste`) para não sobrescrever o pacote de uma semana real.
+
+## 🤝 13. Como Contribuir
+
+- Padrão de mensagens de commit: [`docs/padrao-commits.md`](docs/padrao-commits.md)
+- Fluxo de trabalho com branches e Pull Requests: [`docs/fluxo-branches.md`](docs/fluxo-branches.md)
+
+## 🗓️ 14. Status das Sprints
+
+| Sprint | Período | Situação |
+| :--- | :--- | :--- |
+| Sprint 0 | 12/10 a 18/10 | ☐ |
+| Sprint 1 | 19/10 a 25/10 | ☐ |
+| Sprint 2 | 26/10 a 01/11 | ☐ |
+| Sprint 3 | 02/11 a 08/11 | ☐ |
+| Sprint 4 | 09/11 a 15/11 | ☐ |
+| Sprint 5 | 16/11 a 22/11 | ☐ |
+
+## 👥 15. Equipe e Responsabilidades
+
+🚧 em construção
+
+<!-- Preencher só depois que a divisão de tarefas for confirmada por todos. -->
+
+## 📄 16. Licença
+
+Distribuído sob a licença MIT. Veja o arquivo [`LICENSE`](LICENSE).
