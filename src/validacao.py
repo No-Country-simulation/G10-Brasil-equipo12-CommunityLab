@@ -1,50 +1,44 @@
 # src/validacao.py
+import json
+import re
 
-def validar_e_tratar_json(dados_json: dict, total_processado: int = 1) -> dict:
+from pydantic import ValidationError
+
+from src.schemas import AnaliseLLM
+
+
+class ErroAnaliseLLM(ValueError):
+    """A resposta da LLM não pôde ser usada (JSON quebrado ou fora do formato).
+
+    Não existe mais valor de segurança (fallback): conteúdo inventado com
+    status "sucesso" esconde o erro. Quem chama decide: tentar de novo ou registrar a falha.
     """
-    Valida se o JSON retornado pela LLM possui todas as chaves obrigatórias 
-    do PDF do hackathon e aplica valores de fallback caso algum campo esteja faltando.
-    """
-    if not isinstance(dados_json, dict):
-        dados_json = {}
 
-    resumo_raw = dados_json.get("resumo_comunidade", {})
-    ativos_raw = dados_json.get("ativos_distribuicao_gerados", {})
-    post_raw = ativos_raw.get("post_linkedin", {})
-    news_raw = ativos_raw.get("destaque_newsletter_semanal", {})
-    faq_raw = ativos_raw.get("sugestao_conteudo_faq", {})
-    oci_raw = dados_json.get("armazenamento_oci", {})
 
-    json_valido = {
-        "status": dados_json.get("status", "sucesso"),
-        "resumo_comunidade": {
-            "sentimento_predominante": resumo_raw.get("sentimento_predominante", "Altamente Positivo"),
-            "topicos_principais": resumo_raw.get("topicos_principais", ["Geral"]),
-            "total_interacoes_processadas": resumo_raw.get("total_interacoes_processadas", total_processado)
-        },
-        "ativos_distribuicao_gerados": {
-            "post_linkedin": {
-                "titulo": post_raw.get("titulo", "Atualizações da Comunidade ONE"),
-                "copy": post_raw.get("copy", "Confira as novidades da nossa comunidade!"),
-                "canal_recomendado": post_raw.get("canal_recomendado", "LinkedIn Oficial"),
-                "potencial_engajamento": post_raw.get("potencial_engajamento", "Alto")
-            },
-            "destaque_newsletter_semanal": {
-                "secao": news_raw.get("secao", "Vitória da Semana"),
-                "chamada": news_raw.get("chamada", "Resumo da Semana"),
-                "resumo": news_raw.get("resumo", "Acompanhe os principais destaques da comunidade.")
-            },
-            "sugestao_conteudo_faq": {
-                "tema": faq_raw.get("tema", "Dúvidas Frequentes"),
-                "origem": faq_raw.get("origem", "Interações gerais"),
-                "status": faq_raw.get("status", "encaminhado_para_mentoria")
-            }
-        },
-        "armazenamento_oci": {
-            "bucket": oci_raw.get("bucket", "communitylab-ativos-marketing"),
-            "caminho_objeto": oci_raw.get("caminho_objeto", "ativos/2026-semana-04/pacote-distribuicao.json"),
-            "status": oci_raw.get("status", "pendente_upload")
-        }
-    }
+def _remover_cercas_markdown(texto: str) -> str:
+    """Aceita a resposta embrulhada em ```json ... ``` (a LLM às vezes faz isso)."""
+    limpo = texto.strip()
+    achado = re.match(r"^```(?:json)?\s*(.*?)\s*```$", limpo, flags=re.DOTALL | re.IGNORECASE)
+    return achado.group(1) if achado else limpo
 
-    return json_valido
+
+def validar_analise_llm(texto_resposta: str) -> AnaliseLLM:
+    """Converte o texto devolvido pela LLM em AnaliseLLM ou levanta ErroAnaliseLLM."""
+    if not isinstance(texto_resposta, str) or not texto_resposta.strip():
+        raise ErroAnaliseLLM("A LLM devolveu uma resposta vazia.")
+
+    try:
+        dados = json.loads(_remover_cercas_markdown(texto_resposta))
+    except json.JSONDecodeError as erro:
+        raise ErroAnaliseLLM(
+            f"A resposta da LLM não é um JSON válido ({erro.msg}, linha {erro.lineno}, coluna {erro.colno})."
+        ) from erro
+
+    try:
+        return AnaliseLLM.model_validate(dados)
+    except ValidationError as erro:
+        linhas = []
+        for e in erro.errors():
+            campo = ".".join(str(parte) for parte in e["loc"]) or "(resposta inteira)"
+            linhas.append(f"  - {campo}: {e['msg']}")
+        raise ErroAnaliseLLM("A resposta da LLM está fora do formato esperado:\n" + "\n".join(linhas)) from erro
