@@ -3,6 +3,7 @@
 Fonte da verdade do formato do PDF do hackathon. Todos os módulos
 (ingestão, limpeza, prompts, validação, OCI, Streamlit) devem usar estes modelos.
 """
+import unicodedata
 from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -38,6 +39,22 @@ class LoteEntrada(BaseModel):
 
 # ------------------------------------------------------------------ SAÍDA
 SENTIMENTOS = ("Altamente Positivo", "Positivo", "Neutro", "Negativo", "Altamente Negativo")
+ENGAJAMENTOS = ("Alto", "Médio", "Baixo")
+
+
+def _sem_acento_minusculo(texto: str) -> str:
+    decomposto = unicodedata.normalize("NFKD", texto)
+    return "".join(c for c in decomposto if not unicodedata.combining(c)).strip().casefold()
+
+
+def _normalizar(valor, validos: tuple):
+    """'altamente positivo ' -> 'Altamente Positivo'. Valor desconhecido passa direto
+    (e a validação do Literal recusa com mensagem clara)."""
+    if isinstance(valor, str):
+        for canonico in validos:
+            if _sem_acento_minusculo(valor) == _sem_acento_minusculo(canonico):
+                return canonico
+    return valor
 
 
 class ResumoComunidade(BaseModel):
@@ -47,12 +64,17 @@ class ResumoComunidade(BaseModel):
 
 
 class PostLinkedin(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     titulo: str
     copy_: str = Field(alias="copy")  # 'copy' sombreia um método do BaseModel
     canal_recomendado: str = "LinkedIn Oficial"
-    potencial_engajamento: Literal["Alto", "Médio", "Baixo"]
+    potencial_engajamento: Literal[ENGAJAMENTOS]
 
-    model_config = ConfigDict(populate_by_name=True)
+    @field_validator("potencial_engajamento", mode="before")
+    @classmethod
+    def _normaliza_engajamento(cls, v):
+        return _normalizar(v, ENGAJAMENTOS)
 
 
 class DestaqueNewsletter(BaseModel):
@@ -87,6 +109,15 @@ class RespostaCommunityLab(BaseModel):
     ativos_distribuicao_gerados: AtivosDistribuicao
     armazenamento_oci: Optional[ArmazenamentoOci] = None
 
+    def para_dict(self) -> dict:
+        """Dicionário no formato do PDF (usa 'copy' em vez de 'copy_').
+        Use SEMPRE este método para imprimir, salvar no OCI ou mostrar no Streamlit."""
+        dados = self.model_dump(by_alias=True)
+        oci = dados.get("armazenamento_oci")
+        if oci is not None and oci.get("detalhe_erro") is None:
+            oci.pop("detalhe_erro", None)
+        return dados
+
 
 # --------------------------------------------------------------- ANÁLISE LLM
 class AnaliseLLM(BaseModel):
@@ -96,10 +127,18 @@ class AnaliseLLM(BaseModel):
     topicos_principais: list[str]
     ativos_distribuicao_gerados: AtivosDistribuicao
 
+    @field_validator("sentimento_predominante", mode="before")
+    @classmethod
+    def _normaliza_sentimento(cls, v):
+        return _normalizar(v, SENTIMENTOS)
+
     @field_validator("topicos_principais")
     @classmethod
     def _sem_vazios(cls, v):
-        return [t.strip() for t in v if t and t.strip()]
+        limpos = [t.strip() for t in v if isinstance(t, str) and t.strip()]
+        if not limpos:
+            raise ValueError("a lista de tópicos não pode ficar vazia")
+        return limpos
 
 
 def montar_resposta(
