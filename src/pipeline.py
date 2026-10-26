@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 from src.ia_service import ErroServicoLLM, analisar_lote
 from src.ingestao import ler_mensagens_comunidade, validar_lote
 from src.limpeza import limpar_dados_comunidade
+from src.relevancia import filtrar_e_ordenar_por_relevancia
 from src.oracle_storage import BUCKET_PADRAO, montar_caminho, salvar_no_oci
 from src.schemas import ArmazenamentoOci, LoteEntrada, RespostaCommunityLab, montar_resposta
 
@@ -48,8 +49,8 @@ def processar_lote(
     cliente_llm=None,
     cliente_oci=None,
 ) -> RespostaCommunityLab:
-    """Executa o fluxo completo: valida, limpa, analisa com a LLM, monta a resposta,
-    (opcionalmente) envia ao OCI e grava uma cópia local em UTF-8.
+    """Executa o fluxo completo: valida, limpa, pontua relevância, analisa com a LLM,
+    monta a resposta, (opcionalmente) envia ao OCI e grava uma cópia local em UTF-8.
 
     salvar_oci=False por padrão de propósito: enviar sobrescreve o objeto do período
     no bucket. Para testar, use um período de teste (ex.: "Semana_Teste").
@@ -61,8 +62,14 @@ def processar_lote(
     """
     dados = validar_lote(lote)
     dados_limpos = limpar_dados_comunidade(dados)
+
+    # Aplica a pontuação e ordenação por relevância nas interações limpas
+    if "interacoes" in dados_limpos:
+        dados_limpos["interacoes"] = filtrar_e_ordenar_por_relevancia(dados_limpos["interacoes"])
+
     if not dados_limpos["interacoes"]:
         raise ErroLoteVazio("Nenhuma interação com texto sobrou depois da limpeza.")
+    
     lote_valido = LoteEntrada.model_validate(dados_limpos)
     periodo = lote_valido.periodo_referencia
 
