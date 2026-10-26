@@ -9,7 +9,7 @@ def testar_upload():
     cliente = oci.object_storage.ObjectStorageClient(config)
 
     # ⚠️ Coloque o seu Namespace real da Oracle entre as aspas:
-    namespace = "grub81prfzvo" 
+    namespace = cliente.get_namespace().data
     bucket_name = "communitylab-ativos-marketing"
     nome_arquivo = "teste-conexao.json"
 
