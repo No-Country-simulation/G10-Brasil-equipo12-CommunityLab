@@ -1,0 +1,20 @@
+{
+  "origem_comunidade": "Discord_Grupo_ONE_G10",
+  "periodo_referencia": "Semana_Teste_Gustavo",
+  "interacoes": [
+    {
+      "id": "MSG_010",
+      "autor": "Gustavo Prado",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
+      "texto": "Recebi uma proposta para estágio em engenharia de dados! Tudo começou quando publiquei no GitHub meu pipeline com bucket na nuvem. Vale muito mostrar o que a gente constrói."
+    },
+    {
+      "id": "MSG_016",
+      "autor": "Henrique Barros",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
+      "texto": "Fechei meu primeiro freela de automação! Usei n8n com Webhook para ligar um formulário a uma planilha. O cliente adorou."
+    }
+  ]
+}
