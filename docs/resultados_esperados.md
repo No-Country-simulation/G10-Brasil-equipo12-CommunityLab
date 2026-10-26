@@ -3,13 +3,13 @@
 Tabela de validação do comportamento esperado do pipeline para os casos de teste de [`dados/casos_demo.json`](../dados/casos_demo.json). Serve de "gabarito": depois de rodar o motor, comparamos o que a IA devolveu com o que está aqui.
 
 ### Escala de sentimentos (referência)
-`Muito positivo` · `Positivo` · `Neutro` · `Negativo` · `Muito negativo`
+`Altamente Positivo` · `Positivo` · `Neutro` · `Negativo` · `Altamente Negativo`
 
 ---
 
 | ID | Entrada (resumo) | Tipo | Sentimento esperado | Tópicos esperados | Ativo esperado | Relevância | Ação sugerida |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **DEMO_01** | *"Pessoal, passei no processo seletivo para Desenvolvedora Júnior de IA!"* | `depoimento` | Muito positivo | Conquistas, Carreira, IA | post de LinkedIn | Alta | Destacar no canal de vitórias e publicar post comemorativo. |
+| **DEMO_01** | *"Pessoal, passei no processo seletivo para Desenvolvedora Júnior de IA!"* | `depoimento` | Altamente Positivo | Conquistas, Carreira, IA | post de LinkedIn | Alta | Destacar no canal de vitórias e publicar post comemorativo. |
 | **DEMO_02** | *"Alguém conseguiu conectar a API da Groq no OCI sem dar erro de autenticação?"* | `pergunta_tecnica` | Negativo | API Groq, OCI, Autenticação | FAQ | Média | Encaminhar para a mentoria e criar tópico de FAQ. |
 | **DEMO_03** | *"O material da Sprint 1 ficou excelente, mas a parte de JSON poderia ter mais exemplos."* | `feedback` | Positivo | Feedback, Material de Estudo | newsletter | Média | Registrar a sugestão de mais exemplos de JSON. |
 | **DEMO_04** | *(mensagem vazia)* | `pergunta_tecnica` | Não se aplica | Não se aplica | Nenhum | Não se aplica | Descartada na limpeza. |
@@ -22,6 +22,6 @@ Tabela de validação do comportamento esperado do pipeline para os casos de tes
 
 - Os casos DEMO_01 a DEMO_03 são os casos "limpos". DEMO_04 a DEMO_08 testam a robustez: texto vazio, duplicata, erros de digitação, ruído (abreviações e emojis) e texto curto e ambíguo.
 - **Valores em revisão:** as linhas DEMO_04 a DEMO_08 e a coluna "Ação sugerida" são propostas do time e podem ser ajustadas.
-- **Escala de sentimento:** a escala acima é a referência para comparar os resultados. O prompt atual (`src/prompts.py`) ainda não obriga a IA a usar exatamente esses 5 níveis (o exemplo dele usa "Altamente Positivo").
+- **Escala de sentimento:** a escala acima é a referência para comparar os resultados. O prompt (`src/prompts.py`) lista esses 5 níveis e `src/schemas.py` recusa qualquer outro valor (ignorando diferenças de maiúsculas e acentos).
 - **Nível da análise:** hoje o motor devolve o sentimento e os tópicos da **comunidade inteira**, não de cada mensagem. A comparação linha a linha depende de uma análise por mensagem, ainda não implementada.
 - Relevância: `Alta`, `Média` e `Baixa` são a referência para a avaliação. O motor ainda não devolve esse campo por mensagem.
