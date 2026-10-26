@@ -1,4 +1,4 @@
-# G10-Brasil-equipo12-CommunityLab
+# G10-Brasil-equipe12-CommunityLab
 
 ## CommunityLab 🤖💬
 
@@ -58,44 +58,57 @@ O fluxo de dados do **CommunityLab** segue estas etapas:
 
 ```mermaid
 graph TD
-    A["Entrada: mensagens da comunidade (JSON ou CSV)"] --> B["Ingestão e limpeza"]
-    B --> C["Análise com LLM: sentimento, tópicos e relevância"]
-    C --> D{"Roteamento por tipo"}
-    D -->|Depoimento| E["Case de Sucesso: post LinkedIn e destaque de newsletter"]
-    D -->|Dúvida técnica| F["Dica ou FAQ encaminhada para mentoria"]
-    D -->|Feedback| G["Métricas gerais de satisfação"]
-    E --> H["Curadoria e aprovação (Streamlit)"]
-    F --> H
-    G --> I["OCI Object Storage"]
-    H --> I
+    A["Entrada: lote JSON ou CSV"] --> B["Ingestão: valida o formato (schemas.py)"]
+    B --> C["Limpeza: remove mensagens vazias e padroniza o texto"]
+    C --> D["Análise com LLM (Groq): sentimento, tópicos e ativos"]
+    D --> E{"Resposta no formato?"}
+    E -->|Sim| F["Montagem: contagem e bloco do OCI feitos pelo código"]
+    E -->|Não| R{"Restam tentativas? (máximo 3)"}
+    R -->|Sim| D
+    R -->|Não| X["Erro claro para quem chamou"]
+    F --> G["Cópia local em saida/"]
+    F --> H["OCI Object Storage (opção --oci)"]
+    F -.-> I["Curadoria e aprovação (Streamlit, planejado)"]
 ```
 
 ### Etapas e situação atual
 
 | # | Etapa | O que faz | Módulo | Situação |
 | :-: | :--- | :--- | :--- | :--- |
-| 1 | Ingestão e validação | Lê o lote de mensagens (JSON ou CSV) e confere o formato | `src/ingestao.py` (leitura); `schemas.py` (validação, planejado) | Leitura: código inicial. Validação: 📝 planejada |
-| 2 | Limpeza | Remove mensagens vazias e padroniza o texto | `src/limpeza.py` | Código inicial |
-| 3 | Análise com LLM | Pede à LLM sentimento, tópicos e relevância, em JSON | `src/prompts.py`, `src/teste_execucao.py` (script de teste); `ia_service.py` (planejado) | 🚧 Em andamento |
-| 4 | Resumo e roteamento | Resume a comunidade e decide o caminho de cada mensagem | `roteador.py` | 📝 Planejado |
-| 5 | Geração de ativos | Gera um conteúdo por canal, com o tom de voz de cada um | Pasta `prompts/`; `ativos.py` | 📝 Planejado |
+| 1 | Ingestão e validação | Lê o lote (JSON ou CSV) e confere o formato; informa o campo errado | `src/ingestao.py`, `src/schemas.py` | ✅ Pronto |
+| 2 | Limpeza | Remove mensagens vazias, padroniza o texto e preserva o `id` | `src/limpeza.py` | ✅ Pronto (remoção de duplicatas: 📝 planejada) |
+| 3 | Análise com LLM | Pede à LLM sentimento, tópicos e os ativos, em JSON, com nova tentativa se vier fora do formato | `src/prompts.py`, `src/ia_service.py`, `src/validacao.py` | ✅ Pronto |
+| 4 | Resumo e roteamento | A LLM decide quais ativos gerar pelas regras do prompt; o código monta a contagem e o bloco do OCI | `src/prompts.py`, `src/schemas.py` (`montar_resposta`) | ✅ Pronto |
+| 5 | Geração de ativos | Gera post de LinkedIn, destaque de newsletter e sugestão de FAQ, cada um com o tom do canal (`null` quando não há material) | Mesma chamada da etapa 3 | ✅ Pronto |
 | 6 | Curadoria e aprovação | Uma pessoa revisa e aprova na interface | Streamlit | 📝 Planejado |
-| 7 | Armazenamento | Salva o pacote final no bucket da OCI | `src/oracle_storage.py` (função `salvar_no_oci`) | ✅ Função pronta e testada com upload real. ⏳ Falta ligá-la ao pipeline |
+| 7 | Armazenamento | Salva o pacote final no bucket da OCI | `src/oracle_storage.py`, `src/pipeline.py` (opção `--oci`) | 🚧 Ligado ao pipeline; teste real do pipeline com `--oci` pendente |
 
-A validação do JSON devolvido pela LLM, com valores de segurança (fallback), já existe em `src/validacao.py`.
+O formato de dados (entrada e saída) está definido em um só lugar, `src/schemas.py`, e todos os módulos usam esses modelos. A resposta da LLM é validada em `src/validacao.py`, **sem valores de segurança falsos**: se a LLM responder fora do formato, o erro é informado em vez de gerar conteúdo inventado com `status: "sucesso"`.
 
-**Ponto de entrada único (sugestão):** uma função `processar_lote(lote)` que executa as etapas 1 a 5. Assim, tanto uma API quanto o Streamlit podem chamar a mesma lógica, e dá para testar sem subir servidor.
+**Ponto de entrada único:** a função `processar_lote(lote)`, em `src/pipeline.py`, executa as etapas 1 a 5 (e a 7, com `salvar_oci=True`). Assim, tanto uma API quanto o Streamlit podem chamar a mesma lógica, e dá para testar sem subir servidor.
+
+```python
+from src.ingestao import ler_mensagens_comunidade
+from src.pipeline import processar_lote
+
+lote = ler_mensagens_comunidade("dados/mensagens_exemplo.json")
+resposta = processar_lote(lote)   # envio ao OCI só com salvar_oci=True
+print(resposta.para_dict())       # dicionário no formato de saída do desafio
+```
+
+Pela linha de comando: `python -m src.pipeline` (veja o guia da seção 12).
 
 **Quando algo falha:**
 
-| Problema | Reação planejada |
+| Problema | Reação |
 | :--- | :--- |
-| Lote fora do formato | A validação recusa e informa qual campo está errado |
-| Mensagem vazia | A limpeza descarta (já implementado) |
-| Mensagem duplicada | A limpeza deve descartar (planejado: a limpeza atual ainda não remove duplicatas) |
-| A LLM responde fora do formato JSON | Valida, tenta de novo algumas vezes e, se continuar falhando, registra o erro e segue com as demais mensagens |
-| A LLM inventa fatos | Regra nos prompts: só usar fatos que aparecem na mensagem original |
-| Falha ao salvar na OCI | Implementado em `salvar_no_oci`: devolve `status: falha_ao_salvar` e o tipo do erro, sem expor dados da configuração |
+| Lote fora do formato | A validação recusa e informa qual campo está errado (✅ implementado) |
+| Mensagem vazia | A limpeza descarta (✅ implementado); se nenhuma sobrar, o pipeline avisa |
+| Mensagem duplicada | A limpeza deve descartar (📝 planejado: a limpeza atual ainda não remove duplicatas) |
+| A LLM responde fora do formato JSON | Valida, tenta de novo até 3 vezes contando à LLM o motivo da recusa e, se continuar falhando, devolve um erro claro. A análise é do lote inteiro, não mensagem a mensagem (✅ implementado) |
+| Chave ou serviço da LLM com problema | Mensagem de erro clara (✅ implementado) |
+| A LLM inventa ou exagera fatos | Regras no prompt: só usar fatos das mensagens, não inflar conquistas (proposta não é contratação) e não citar o autor de relatos de dificuldade pessoal. **Não elimina o risco**: por isso a curadoria humana antes de publicar |
+| Falha ao salvar na OCI | `salvar_no_oci` devolve `status: falha_ao_salvar` e o tipo do erro, sem expor dados da configuração; a análise não se perde (✅ implementado) |
 
 **Fica para depois do MVP:** RAG e embeddings, execução diária automática (cron), Webhook do Discord, geração de imagens e deploy completo.
 
@@ -110,27 +123,29 @@ A validação do JSON devolvido pela LLM, com valores de segurança (fallback), 
 | Parte | Tecnologia | Situação |
 | :--- | :--- | :--- |
 | Linguagem | Python | Em uso |
-| Modelo de IA | `openai/gpt-oss-120b` | Em uso nos scripts de teste |
-| Provedor do modelo | Groq (biblioteca `groq`) | Em uso nos scripts de teste |
+| Modelo de IA | `openai/gpt-oss-120b` | Em uso no pipeline |
+| Provedor do modelo | Groq (biblioteca `groq`) | Em uso no pipeline |
 | Variáveis de ambiente | `python-dotenv` | Em uso |
 | Interface de curadoria | Streamlit | Decidido, ainda não implementado |
-| Armazenamento | OCI Object Storage (camada Always Free), via SDK Python `oci` | Função `salvar_no_oci` pronta e testada; falta ligá-la ao pipeline |
-| Dependências | `requirements.txt` (`groq`, `python-dotenv`, `oci`) | Em uso |
-| Previstos no desenho do time | FastAPI, Pydantic, Pandas e LangChain | Ainda não usados no código |
+| Armazenamento | OCI Object Storage (camada Always Free), via SDK Python `oci` | Ligado ao pipeline (opção `--oci`); teste real do pipeline pendente |
+| Contrato de dados | Pydantic (`src/schemas.py`) | Em uso |
+| Dependências | `requirements.txt` (`groq`, `python-dotenv`, `oci`, `pydantic`) | Em uso |
+| Previstos no desenho do time | FastAPI, Pandas e LangChain | Ainda não usados no código |
 | Versionamento | GitHub, com branches e Pull Requests | Em uso |
 
 > Usamos **somente recursos da camada Always Free** da OCI, conforme exige o programa ONE.
 
 ## 📊 7. Mapeamento e Tipos de Mensagem (Dataset)
 
-O motor categoriza as interações da comunidade em 4 tipos principais:
+O motor categoriza as interações da comunidade em 5 tipos:
 
 | Tipo | Descrição |
 | :--- | :--- |
 | `depoimento` | Relatos de conquistas, aprovações em vagas e casos de sucesso dos alunos |
 | `pergunta_tecnica` | Dúvidas sobre código, frameworks (LangGraph, OCI, Gemini) ou infraestrutura |
 | `feedback` | Sugestões, elogios e críticas sobre a dinâmica do programa |
-| `interacao_geral` | Debates espontâneos e conversas informais nos canais |
+| `interacao_geral` | Debates espontâneos e conversas informais nos canais (também é o tipo padrão quando o campo vem vazio) |
+| `entrega_projeto` | Entregas e lançamentos de projetos dos alunos |
 
 **Arquivos de dados:**
 
@@ -138,8 +153,7 @@ O motor categoriza as interações da comunidade em 4 tipos principais:
 - [`dados/casos_demo.json`](dados/casos_demo.json): casos de demonstração, incluindo dados com sujeira (mensagem vazia, repetida, com erros de digitação, com ruído e texto curto e ambíguo)
 - [`docs/resultados_esperados.md`](docs/resultados_esperados.md): tabela de resultados esperados dos casos de demonstração
 
-<!-- Confirmar a lista oficial de tipos: dados/mensagens_exemplo.json também usa "entrega_projeto".
-     Em dados/casos_demo.json, "tipo" é o campo lido pelo motor e "tipo_esperado" fica como gabarito. -->
+Em `dados/casos_demo.json`, `tipo` é o campo lido pelo motor e `tipo_esperado` fica como gabarito. O motor ignora campos extras de teste (como `cenario` e `tipo_esperado`).
 
 ## 📋 8. Formato de Entrada e Ingestão (JSON / CSV)
 
@@ -169,22 +183,60 @@ O arquivo de entrada tem uma origem, um período e uma lista de interações:
 | `tipo` | Um dos tipos da seção 7 |
 | `texto` | Conteúdo bruto da mensagem |
 
-Em **CSV**, as colunas são `autor`, `canal`, `tipo` e `texto`.
+Em **CSV**, as colunas são `autor`, `canal`, `tipo` e `texto` (a coluna `id` é opcional). Como o CSV não traz origem nem período, eles assumem `Discord_CSV_Import` e `Semana_Atual`.
+
+O campo `id` de cada interação também é opcional; quando existe, é preservado na limpeza. O lote precisa ter pelo menos uma interação, e um `tipo` fora dos 5 da seção 7 é recusado com o nome do campo.
+
+### Formato de saída
+
+A resposta segue o formato do desafio:
+
+```json
+{
+  "status": "sucesso",
+  "resumo_comunidade": {
+    "total_interacoes_processadas": 2,
+    "sentimento_predominante": "Altamente Positivo",
+    "topicos_principais": ["Conquistas", "LangGraph"]
+  },
+  "ativos_distribuicao_gerados": {
+    "post_linkedin": { "titulo": "...", "copy": "...", "canal_recomendado": "LinkedIn Oficial", "potencial_engajamento": "Alto" },
+    "destaque_newsletter_semanal": { "secao": "Vitória da Semana", "chamada": "...", "resumo": "..." },
+    "sugestao_conteudo_faq": { "tema": "Dica Rápida: ...", "origem": "...", "status": "encaminhado_para_mentoria" }
+  },
+  "armazenamento_oci": {
+    "bucket": "communitylab-ativos-marketing",
+    "caminho_objeto": "ativos/2026-semana-04/pacote-distribuicao.json",
+    "status": "pendente_upload"
+  }
+}
+```
+
+| Campo | Quem preenche | Observação |
+| :--- | :--- | :--- |
+| `total_interacoes_processadas` | O código | Conta as interações que sobraram depois da limpeza |
+| `sentimento_predominante` | A LLM | Um destes: `Altamente Positivo`, `Positivo`, `Neutro`, `Negativo`, `Altamente Negativo` |
+| `topicos_principais` | A LLM | Lista de temas curtos |
+| `post_linkedin`, `destaque_newsletter_semanal`, `sugestao_conteudo_faq` | A LLM | Cada um vem `null` quando o lote não tem material para ele (por exemplo, sem pergunta técnica não há FAQ) |
+| `potencial_engajamento` | A LLM | `Alto`, `Médio` ou `Baixo` |
+| `armazenamento_oci` | O código | `pendente_upload`, `salvo_com_sucesso` ou `falha_ao_salvar` (com `detalhe_erro`) |
+
+Ao usar a resposta no código, chame `resposta.para_dict()`: ele devolve `copy` (e não `copy_`) e é o formato que deve ser impresso, salvo no OCI ou mostrado no Streamlit.
 
 <!-- O desafio lista como formas de ingestão: JSON, CSV, Webhook ou integração com plataformas.
      A versão anterior citava PDF como entrada. Confirmar se era intencional antes de incluir. -->
 
 ## 🔄 9. Exemplos de Transformação (antes → depois)
 
-🚧 em construção
+Três transformações reais, com a mensagem original, a análise e os ativos gerados, estão em [`docs/exemplos_transformacao.md`](docs/exemplos_transformacao.md):
 
-<!-- O desafio pede no mínimo 3 exemplos. Formato sugerido para cada um:
+| # | Entrada | Saída | O que mostra |
+| :-: | :--- | :--- | :--- |
+| 1 | Um depoimento (Mariana) e uma entrega de projeto (Rafael) | Post de LinkedIn e destaque de newsletter | Uma conquista vira dois formatos, cada um com o tom do canal |
+| 2 | Uma proposta de estágio (Gustavo) e um freela fechado (Henrique) | Post de LinkedIn e destaque de newsletter; FAQ `null` | Fidelidade aos fatos (proposta não vira contratação) e ausência de ativo quando não há material |
+| 3 | Uma dúvida técnica (Rafael Tavares) | Sugestão de FAQ encaminhada para a mentoria | Dúvida recorrente vira tópico de FAQ rastreável |
 
-### Exemplo 1: [nome]
-**Mensagem original:** ...
-**Análise:** sentimento, tópicos, relevância
-**Ativo gerado:** ...
--->
+As saídas são reais e os dados, simulados. A LLM varia entre execuções, por isso a revisão humana antes de publicar faz parte do fluxo.
 
 ## 🖥️ 10. Interface de Curadoria e Validação
 
@@ -209,13 +261,17 @@ ativos/2026-semana-04/pacote-distribuicao.json
 
 **Variáveis opcionais** no `.env` (valores padrão entre parênteses): `OCI_BUCKET` (`communitylab-ativos-marketing`), `OCI_CONFIG_FILE` (`~/.oci/config`) e `OCI_PROFILE` (`DEFAULT`).
 
-**Situação:** a função foi testada com um upload real no bucket. Ainda falta ligá-la ao final do pipeline.
+**No pipeline:** `processar_lote(lote, salvar_oci=True)` (ou `python -m src.pipeline --oci`) chama `salvar_no_oci` e coloca o resultado em `armazenamento_oci`. O arquivo enviado ao bucket é o pacote sem esse bloco. Se o envio falhar, a análise não se perde: o motivo aparece no próprio bloco (`status: falha_ao_salvar`).
+
+> **Cuidado:** enviar sobrescreve o objeto do período. Por isso o envio só acontece com `--oci` (ou `salvar_oci=True`), e os testes devem usar um período de teste (`--periodo Semana_Teste`), nunca `Semana_04`.
+
+**Situação:** a função `salvar_no_oci` foi testada com um upload real no bucket. A ligação ao pipeline foi testada com um cliente simulado; o teste real do pipeline com `--oci` ainda está pendente.
 
 <!-- Não colocar chaves, OCIDs, namespace nem configurações de conta. -->
 
 ## 🚀 12. Guia Passo a Passo de Implantação
 
-Este guia cobre o que já existe no repositório: a leitura, a limpeza, a análise com a LLM e o teste de envio para a OCI. A interface (Streamlit) e a ligação do envio ao pipeline serão acrescentadas quando estiverem prontas.
+Este guia cobre o pipeline completo: leitura, limpeza, análise com a LLM, montagem da resposta e envio opcional para a OCI. A interface (Streamlit) será acrescentada quando estiver pronta.
 
 **1. Pré-requisitos**
 
@@ -227,7 +283,7 @@ Este guia cobre o que já existe no repositório: a leitura, a limpeza, a análi
 
 ```bash
 git clone https://github.com/No-Country-simulation/G10-Brasil-equipo12-CommunityLab.git
-cd G10-Brasil-equipo12-CommunityLab
+cd G10-Brasil-equipe12-CommunityLab
 ```
 
 **3. Criar e ativar o ambiente virtual**
@@ -262,15 +318,23 @@ python src/teste_groq.py
 
 O modelo deve responder algo como "Funcionando com sucesso!".
 
-**7. Rodar o pipeline de teste**
+**7. Rodar o pipeline**
 
 Na pasta raiz do projeto:
 
 ```bash
-python -m src.teste_execucao
+python -m src.pipeline
 ```
 
-O script lê `dados/mensagens_exemplo.json`, faz a limpeza, envia para a Groq (modelo `openai/gpt-oss-120b`), valida a resposta e imprime o JSON final. Ele ainda não envia o resultado para a OCI.
+O comando lê `dados/mensagens_exemplo.json`, valida, faz a limpeza, envia para a Groq (modelo `openai/gpt-oss-120b`), valida a resposta, imprime o JSON final e grava uma cópia na pasta `saida/` (ignorada pelo Git). Ele **não** envia nada para a OCI, a menos que você use `--oci`.
+
+Outros usos:
+
+```bash
+python -m src.pipeline dados/dataset_simulado.json                # outro arquivo (JSON ou CSV)
+python -m src.pipeline dados/caso_proposta_estagio.json           # lote pequeno, sem pergunta técnica
+python -m src.pipeline dados/dataset_simulado.json --periodo Semana_Teste   # troca o período
+```
 
 **8. Testar o envio para a OCI (opcional)**
 
@@ -281,6 +345,14 @@ python -c "from src.oracle_storage import salvar_no_oci; print(salvar_no_oci({'t
 ```
 
 O resultado esperado é `'status': 'salvo_com_sucesso'`. Use um período de teste (como `Semana_Teste`) para não sobrescrever o pacote de uma semana real.
+
+Para testar o pipeline completo com envio (sempre com período de teste):
+
+```bash
+python -m src.pipeline --oci --periodo Semana_Teste
+```
+
+No final, o bloco `armazenamento_oci` deve mostrar `salvo_com_sucesso`. Se mostrar `falha_ao_salvar`, o campo `detalhe_erro` informa o tipo do erro (por exemplo, configuração da OCI ausente).
 
 ## 🤝 13. Como Contribuir
 
