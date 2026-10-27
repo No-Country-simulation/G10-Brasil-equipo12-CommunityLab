@@ -31,10 +31,14 @@ def calcular_pontuacao_interacao(interacao: dict) -> int:
     return min(pontos, 100)  # Teto máximo de 100 pontos
 
 
-def filtrar_e_ordenar_por_relevancia(interacoes: list[dict], limite: int = 5) -> list[dict]:
+def filtrar_e_ordenar_por_relevancia(interacoes: list[dict], limite: int | None = None) -> list[dict]:
     """
-    Atribui pontuação a cada interação, ordena do mais relevante para o menos relevante
-    e retorna as principais interações filtradas pelo limite desejado.
+    Atribui pontuação a cada interação e ordena da mais relevante para a menos relevante.
+
+    Por padrão (limite=None) devolve TODAS as interações, só reordenadas. Cortar o lote
+    mudaria a contagem de interações processadas e o sentimento da comunidade, e deixaria
+    de fora tipos inteiros (por exemplo, as dúvidas técnicas que alimentam o FAQ).
+    Use `limite` apenas quando houver um motivo explícito, como o limite de tokens da API.
     """
     interacoes_pontuadas = []
     
@@ -47,4 +51,4 @@ def filtrar_e_ordenar_por_relevancia(interacoes: list[dict], limite: int = 5) ->
     # Ordena de forma decrescente pela pontuação (maior relevância primeiro)
     ordenadas = sorted(interacoes_pontuadas, key=lambda x: x["pontuacao_relevancia"], reverse=True)
 
-    return ordenadas[:limite]
+    return ordenadas if limite is None else ordenadas[:limite]
