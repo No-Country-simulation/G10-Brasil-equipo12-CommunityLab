@@ -76,8 +76,8 @@ graph TD
 | # | Etapa | O que faz | Módulo | Situação |
 | :-: | :--- | :--- | :--- | :--- |
 | 1 | Ingestão e validação | Lê o lote (JSON ou CSV) e confere o formato; informa o campo errado | `src/ingestao.py`, `src/schemas.py` | ✅ Pronto |
-| 2 | Limpeza | Remove mensagens vazias, padroniza o texto e preserva o `id` | `src/limpeza.py` | ✅ Pronto (remoção de duplicatas: 📝 planejada) |
-| 3 | Análise com LLM | Pede à LLM sentimento, tópicos e os ativos, em JSON, com nova tentativa se vier fora do formato | `src/prompts.py`, `src/ia_service.py`, `src/validacao.py` | ✅ Pronto |
+| 2 | Limpeza | Remove mensagens vazias, padroniza o texto e preserva o `id` | `src/limpeza.py`, `src/relevancia.py` (pontuação de 0 a 100 que só reordena, sem cortar mensagens) | ✅ Pronto (remoção de duplicatas: 📝 planejada) |
+| 3 | Análise com LLM | Pede à LLM sentimento, tópicos e os ativos, em JSON, com nova tentativa se vier fora do formato | `src/prompts.py`, `src/ia_service.py`, `src/validacao.py`, `src/utils/prompt_loader.py` (guias em `prompts/`) | ✅ Pronto |
 | 4 | Resumo e roteamento | A LLM decide quais ativos gerar pelas regras do prompt; o código monta a contagem e o bloco do OCI | `src/prompts.py`, `src/schemas.py` (`montar_resposta`) | ✅ Pronto |
 | 5 | Geração de ativos | Gera post de LinkedIn, destaque de newsletter e sugestão de FAQ, cada um com o tom do canal (`null` quando não há material) | Mesma chamada da etapa 3 | ✅ Pronto |
 | 6 | Curadoria e aprovação | Uma pessoa revisa e aprova na interface | Streamlit | 📝 Planejado |
@@ -358,6 +358,22 @@ No final, o bloco `armazenamento_oci` deve mostrar `salvo_com_sucesso`. Se mostr
 
 - Padrão de mensagens de commit: [`docs/padrao-commits.md`](docs/padrao-commits.md)
 - Fluxo de trabalho com branches e Pull Requests: [`docs/fluxo-branches.md`](docs/fluxo-branches.md)
+
+**9. Rodar os testes automáticos**
+
+Os testes usam só a biblioteca padrão do Python (`unittest`), rodam **sem chave de API e sem internet** e não enviam nada à OCI. Na pasta raiz:
+
+```bash
+python -m unittest discover -s tests -t . -v
+```
+
+| Arquivo | O que confere |
+| :--- | :--- |
+| `tests/test_relevancia.py` | Pontuação por tipo e palavras-chave, sem diferença de acento ou maiúscula, sem casar "vaga" dentro de "devagar", teto de 100, ordem estável e nenhuma mensagem cortada por padrão |
+| `tests/test_prompt_loader.py` | Os 3 guias de `prompts/` carregam e nomes de canal inválidos (como `../README`) são recusados |
+| `tests/test_ia_service.py` | Com um cliente falso: o system prompt leva os guias e o lembrete final, há nova tentativa com o motivo da recusa e, esgotadas as tentativas, o erro é informado em vez de gerar conteúdo inventado |
+
+Resultado esperado: `Ran 19 tests ... OK`. Testes que dependem da Groq ou da OCI reais continuam sendo manuais (passos 7 e 8).
 
 ## 🗓️ 14. Status das Sprints
 
