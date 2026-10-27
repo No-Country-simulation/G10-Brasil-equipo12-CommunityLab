@@ -81,7 +81,7 @@ graph TD
 | 4 | Resumo e roteamento | A LLM decide quais ativos gerar pelas regras do prompt; o código monta a contagem e o bloco do OCI | `src/prompts.py`, `src/schemas.py` (`montar_resposta`) | ✅ Pronto |
 | 5 | Geração de ativos | Gera post de LinkedIn, destaque de newsletter e sugestão de FAQ, cada um com o tom do canal (`null` quando não há material) | Mesma chamada da etapa 3 | ✅ Pronto |
 | 6 | Curadoria e aprovação | Uma pessoa revisa e aprova na interface | Streamlit | 📝 Planejado |
-| 7 | Armazenamento | Salva o pacote final no bucket da OCI | `src/oracle_storage.py`, `src/pipeline.py` (opção `--oci`) | 🚧 Ligado ao pipeline; teste real do pipeline com `--oci` pendente |
+| 7 | Armazenamento | Salva o pacote final no bucket da OCI | `src/oracle_storage.py`, `src/pipeline.py` (opção `--oci`) | ✅ Ligado ao pipeline e testado com upload real (26/10/2026) |
 
 O formato de dados (entrada e saída) está definido em um só lugar, `src/schemas.py`, e todos os módulos usam esses modelos. A resposta da LLM é validada em `src/validacao.py`, **sem valores de segurança falsos**: se a LLM responder fora do formato, o erro é informado em vez de gerar conteúdo inventado com `status: "sucesso"`.
 
@@ -127,7 +127,7 @@ Pela linha de comando: `python -m src.pipeline` (veja o guia da seção 12).
 | Provedor do modelo | Groq (biblioteca `groq`) | Em uso no pipeline |
 | Variáveis de ambiente | `python-dotenv` | Em uso |
 | Interface de curadoria | Streamlit | Decidido, ainda não implementado |
-| Armazenamento | OCI Object Storage (camada Always Free), via SDK Python `oci` | Ligado ao pipeline (opção `--oci`); teste real do pipeline pendente |
+| Armazenamento | OCI Object Storage (camada Always Free), via SDK Python `oci` | Ligado ao pipeline (opção `--oci`) e testado com upload real |
 | Contrato de dados | Pydantic (`src/schemas.py`) | Em uso |
 | Dependências | `requirements.txt` (`groq`, `python-dotenv`, `oci`, `pydantic`) | Em uso |
 | Previstos no desenho do time | FastAPI, Pandas e LangChain | Ainda não usados no código |
@@ -265,7 +265,7 @@ ativos/2026-semana-04/pacote-distribuicao.json
 
 > **Cuidado:** enviar sobrescreve o objeto do período. Por isso o envio só acontece com `--oci` (ou `salvar_oci=True`), e os testes devem usar um período de teste (`--periodo Semana_Teste`), nunca `Semana_04`.
 
-**Situação:** a função `salvar_no_oci` foi testada com um upload real no bucket. A ligação ao pipeline foi testada com um cliente simulado; o teste real do pipeline com `--oci` ainda está pendente.
+**Situação:** a função `salvar_no_oci` foi testada com um upload real no bucket, e o pipeline completo também. Em 26/10/2026, o comando `python -m src.pipeline dados/caso_proposta_estagio.json --oci --periodo Semana_Teste` devolveu `status: salvo_com_sucesso` para o objeto `ativos/2026-semana-teste/pacote-distribuicao.json`. O teste usou um período de teste, então não sobrescreveu o pacote de nenhuma semana real.
 
 <!-- Não colocar chaves, OCIDs, namespace nem configurações de conta. -->
 
