@@ -81,7 +81,7 @@ graph TD
 | 4 | Resumo e roteamento | A LLM decide quais ativos gerar pelas regras do prompt; o código monta a contagem e o bloco do OCI | `src/prompts.py`, `src/schemas.py` (`montar_resposta`) | ✅ Pronto |
 | 5 | Geração de ativos | Gera post de LinkedIn, destaque de newsletter e sugestão de FAQ, cada um com o tom do canal (`null` quando não há material) | Mesma chamada da etapa 3 | ✅ Pronto |
 | 6 | Curadoria e aprovação | Uma pessoa revisa e aprova na interface | Streamlit | 📝 Planejado |
-| 7 | Armazenamento | Salva o pacote final no bucket da OCI | `src/oracle_storage.py`, `src/pipeline.py` (opção `--oci`) | ✅ Ligado ao pipeline e testado com upload real (26/10/2026) |
+| 7 | Armazenamento | Salva o pacote final no bucket da OCI | `src/oracle_storage.py`, `src/pipeline.py` (opção `--oci`) | ✅ Ligado ao pipeline e testado com upload real (confirmado no console em 27/10/2026) |
 
 O formato de dados (entrada e saída) está definido em um só lugar, `src/schemas.py`, e todos os módulos usam esses modelos. A resposta da LLM é validada em `src/validacao.py`, **sem valores de segurança falsos**: se a LLM responder fora do formato, o erro é informado em vez de gerar conteúdo inventado com `status: "sucesso"`.
 
@@ -265,7 +265,18 @@ ativos/2026-semana-04/pacote-distribuicao.json
 
 > **Cuidado:** enviar sobrescreve o objeto do período. Por isso o envio só acontece com `--oci` (ou `salvar_oci=True`), e os testes devem usar um período de teste (`--periodo Semana_Teste`), nunca `Semana_04`.
 
-**Situação:** a função `salvar_no_oci` foi testada com um upload real no bucket, e o pipeline completo também. Em 26/10/2026, o comando `python -m src.pipeline dados/caso_proposta_estagio.json --oci --periodo Semana_Teste` devolveu `status: salvo_com_sucesso` para o objeto `ativos/2026-semana-teste/pacote-distribuicao.json`. O teste usou um período de teste, então não sobrescreveu o pacote de nenhuma semana real.
+**Estrutura no bucket** (partição por período, para isolar cada semana e facilitar a auditoria):
+
+```
+communitylab-ativos-marketing/   (bucket)
+└── ativos/
+    └── {ano}-{periodo}/         (ex.: 2026-semana-teste)
+        └── pacote-distribuicao.json
+```
+
+**Situação:** a função `salvar_no_oci` foi testada com upload real no bucket, e o pipeline completo também, com o comando `python -m src.pipeline dados/caso_proposta_estagio.json --oci --periodo Semana_Teste`. O teste usou um período de teste, então não sobrescreveu o pacote de nenhuma semana real.
+
+**Evidência:** a captura do console mostra o objeto `ativos/2026-semana-teste/pacote-distribuicao.json` (1,31 KiB, modificado em 27/10/2026, 15:53 UTC): [`docs/evidencias/oci_bucket_2026-semana-teste.png`](docs/evidencias/oci_bucket_2026-semana-teste.png). A imagem não mostra namespace, OCIDs nem configuração da conta. Como o objeto de um mesmo período é sobrescrito a cada envio, a captura mostra a execução mais recente.
 
 <!-- Não colocar chaves, OCIDs, namespace nem configurações de conta. -->
 
