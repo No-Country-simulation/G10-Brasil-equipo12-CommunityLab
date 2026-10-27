@@ -7,9 +7,20 @@ from dotenv import load_dotenv
 from src.prompts import SYSTEM_PROMPT_ANALISE, construir_prompt_usuario
 from src.schemas import AnaliseLLM
 from src.validacao import ErroAnaliseLLM, validar_analise_llm
+from src.utils.prompt_loader import carregar_guia_prompt
 
 MODELO = "openai/gpt-oss-120b"
 TEMPERATURA = 0.2
+
+
+# Vem depois dos guias de propósito: o que a LLM lê por último pesa mais.
+LEMBRETE_FINAL = (
+    "PRECEDÊNCIA: os guias acima definem apenas TOM e ESTRUTURA de cada canal. "
+    "Se algum guia conflitar com as REGRAS GERAIS ou com o FORMATO DE SAÍDA definidos no início, "
+    "valem as REGRAS GERAIS e o FORMATO DE SAÍDA. Use somente fatos que aparecem nas mensagens, "
+    "não aumente conquistas, não invente soluções, números ou nomes, e responda apenas com o JSON "
+    "no formato definido (use null no ativo que não tiver material)."
+)
 
 
 class ErroServicoLLM(RuntimeError):
@@ -17,27 +28,44 @@ class ErroServicoLLM(RuntimeError):
 
 
 def _criar_cliente():
-    load_dotenv(override=True)  # o .env do projeto vence variáveis já definidas no terminal
+    load_dotenv(override=True)
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         raise ErroServicoLLM("A variável GROQ_API_KEY não foi encontrada. Confira o arquivo .env.")
-    from groq import Groq  # importado aqui para o resto do projeto rodar sem a biblioteca
+    from groq import Groq
 
     return Groq(api_key=api_key)
 
 
 def analisar_lote(dados_limpos: dict, tentativas: int = 3, cliente=None) -> AnaliseLLM:
-    """Envia o lote limpo à LLM e devolve a análise validada.
-
-    Se a resposta vier fora do formato, tenta de novo (até `tentativas`), contando à LLM
-    qual foi o erro. Se continuar falhando, levanta ErroAnaliseLLM.
-    Erros da API (chave, rede, limite) levantam ErroServicoLLM e não são repetidos aqui:
-    a biblioteca da Groq já faz as próprias tentativas para falhas de conexão.
-
-    `cliente` existe para testes (permite passar um cliente falso).
-    """
+    """Envia o lote limpo à LLM e devolve a análise validada."""
     if cliente is None:
         cliente = _criar_cliente()
+
+    # 1. Carrega dinamicamente os guias de tom de voz salvos na pasta /prompts
+    prompt_linkedin = carregar_guia_prompt("linkedin")
+    prompt_newsletter = carregar_guia_prompt("newsletter")
+    prompt_faq = carregar_guia_prompt("faq")
+
+    # 2. Consolida o system prompt base da aplicação com os guias de canais
+    system_prompt_consolidado = f"""
+{SYSTEM_PROMPT_ANALISE}
+
+---
+DIRETRIZES DE TOM DE VOZ POR CANAL (USE-AS PARA GERAR OS ATIVOS):
+
+[GUIA LINKEDIN]
+{prompt_linkedin}
+
+[GUIA NEWSLETTER]
+{prompt_newsletter}
+
+[GUIA FAQ]
+{prompt_faq}
+
+---
+{LEMBRETE_FINAL}
+"""
 
     prompt_base = construir_prompt_usuario(dados_limpos)
     ultimo_erro = None
@@ -52,7 +80,8 @@ def analisar_lote(dados_limpos: dict, tentativas: int = 3, cliente=None) -> Anal
         try:
             resposta = cliente.chat.completions.create(
                 messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT_ANALISE},
+                    # 3. Injeta o system prompt consolidado contendo os guias de /prompts
+                    {"role": "system", "content": system_prompt_consolidado},
                     {"role": "user", "content": prompt},
                 ],
                 model=MODELO,
