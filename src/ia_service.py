@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from src.prompts import SYSTEM_PROMPT_ANALISE, construir_prompt_usuario
 from src.schemas import AnaliseLLM
 from src.validacao import ErroAnaliseLLM, validar_analise_llm
-from src.utils.prompt_loader import carregar_guia_prompt  # <--- Adicionado aqui
+from src.utils.prompt_loader import carregar_guia_prompt
 
 MODELO = "openai/gpt-oss-120b"
 TEMPERATURA = 0.2
