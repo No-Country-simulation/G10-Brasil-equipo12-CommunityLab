@@ -13,6 +13,16 @@ MODELO = "openai/gpt-oss-120b"
 TEMPERATURA = 0.2
 
 
+# Vem depois dos guias de propósito: o que a LLM lê por último pesa mais.
+LEMBRETE_FINAL = (
+    "PRECEDÊNCIA: os guias acima definem apenas TOM e ESTRUTURA de cada canal. "
+    "Se algum guia conflitar com as REGRAS GERAIS ou com o FORMATO DE SAÍDA definidos no início, "
+    "valem as REGRAS GERAIS e o FORMATO DE SAÍDA. Use somente fatos que aparecem nas mensagens, "
+    "não aumente conquistas, não invente soluções, números ou nomes, e responda apenas com o JSON "
+    "no formato definido (use null no ativo que não tiver material)."
+)
+
+
 class ErroServicoLLM(RuntimeError):
     """Falha ao falar com a API da LLM (chave ausente ou inválida, rede, limite de uso)."""
 
@@ -52,6 +62,9 @@ DIRETRIZES DE TOM DE VOZ POR CANAL (USE-AS PARA GERAR OS ATIVOS):
 
 [GUIA FAQ]
 {prompt_faq}
+
+---
+{LEMBRETE_FINAL}
 """
 
     prompt_base = construir_prompt_usuario(dados_limpos)
