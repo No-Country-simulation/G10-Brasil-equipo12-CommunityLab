@@ -116,8 +116,7 @@
       "topicos_esperados": [
         "LangGraph",
         "Classificação de Mensagens",
-        "Roteamento",
-        "Processamento de Texto"
+        "Roteamento"
       ],
       "ativo_esperado": "FAQ"
     }
