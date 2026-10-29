@@ -406,3 +406,19 @@ Resultado esperado: `Ran 19 tests ... OK`. Testes que dependem da Groq ou da OCI
 ## 📄 16. Licença
 
 Distribuído sob a licença MIT. Veja o arquivo [`LICENSE`](LICENSE).
+
+---
+
+## 📏 Régua de Relevância (Critérios de Classificação)
+
+### 🔴 1. Alta Relevância (Ativo: Post LinkedIn / Case de Sucesso)
+* **Critério de Entrada:** Interações contendo conquistas profissionais (ex: contratações, aprovações em processos seletivos), depoimentos espontâneos de superação, projetos de destaque concluídos utilizando a stack do curso (LangChain, OCI, Python) e feedbacks de alto impacto.
+* **Ação do Motor:** O LLM extrai citações, identifica o autor e o contexto, e gera automaticamente um post persuasivo para o LinkedIn com hashtags recomendadas.
+
+### 🟡 2. Média Relevância (Ativo: Destaque Newsletter / FAQ Dinâmico)
+* **Critério de Entrada:** Dúvidas técnicas recorrentes sobre a matéria (ex: configuração de nós condicionais no LangGraph, erros na OCI, integração de APIs), debates ricos entre alunos sobre boas práticas de código e dicas de estudo compartilhadas.
+* **Ação do Motor:** O LLM categoriza o tópico e gera um resumo para a Newsletter Semanal ou formata a dúvida e a resposta para o banco de dados do FAQ/Mentoria.
+
+### 🟢 3. Baixa Relevância (Ação: Filtro / Descarte Automático)
+* **Critério de Entrada:** Mensagens puramente sociais ou de saudação ("Bom dia", "Obrigado"), conversas paralelas fora do escopo técnico, emojis isolados ou mensagens incompletas/sem contexto.
+* **Ação do Motor:** O motor identifica a ausência de valor comunicacional e descarta a mensagem do fluxo de geração de ativos.
