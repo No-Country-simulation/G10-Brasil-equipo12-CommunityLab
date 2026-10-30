@@ -1,6 +1,8 @@
-📊 Resultados Esperados dos Casos de Demonstração
+# 📊 Resultados Esperados dos Casos de Demonstração
 
 Tabela de validação do comportamento esperado do pipeline para os casos de teste de [`dados/casos_demo.json`](../dados/casos_demo.json). Serve de "gabarito": depois de rodar o motor, comparamos o que a IA devolveu com o que está aqui.
+
+A tabela mostra o comportamento esperado **por mensagem**; já o pipeline atual consolida o sentimento e os tópicos **por lote** (veja "Nível da análise" nas observações).
 
 ### Escala de sentimentos (referência)
 `Altamente Positivo` · `Positivo` · `Neutro` · `Negativo` · `Altamente Negativo`
@@ -11,7 +13,7 @@ Tabela de validação do comportamento esperado do pipeline para os casos de tes
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **DEMO_01** | *"Pessoal, passei no processo seletivo para Desenvolvedora Júnior de IA!"* | `depoimento` | Altamente Positivo | Conquistas, Carreira, IA | post de LinkedIn | Alta | Destacar no canal de vitórias e publicar post comemorativo. |
 | **DEMO_02** | *"Alguém conseguiu conectar a API da Groq no OCI sem dar erro de autenticação?"* | `pergunta_tecnica` | Negativo | API Groq, OCI, Autenticação | FAQ | Média | Encaminhar para a mentoria e criar tópico de FAQ. |
-| **DEMO_03** | *"O material da Sprint 1 ficou excelente, mas a parte de JSON poderia ter mais exemplos."* | `feedback` | Positivo | Feedback, Material de Estudo | newsletter | Média | Registrar a sugestão de mais exemplos de JSON. |
+| **DEMO_03** | *"O material da Sprint 1 ficou excelente, mas a parte de JSON poderia ter mais exemplos."* | `feedback` | Positivo | Feedback, Material de Estudo, Sprint 1 | newsletter | Média | Registrar a sugestão de mais exemplos de JSON. |
 | **DEMO_04** | *(mensagem vazia)* | `pergunta_tecnica` | Não se aplica | Não se aplica | Nenhum | Não se aplica | Descartada na limpeza. |
 | **DEMO_05** | *Mesmo texto da DEMO_02 (repetida)* | `pergunta_tecnica` | Negativo | API Groq, OCI, Autenticação | Nenhum (duplicata) | Não se aplica | Contar uma só vez. ⚠️ A limpeza atual ainda não remove duplicatas. |
 | **DEMO_06** | *"Gente meu projetooo deu error na execução e nao consig rdodar o script"* | `pergunta_tecnica` | Negativo | Erro de execução, Script | FAQ | Média | Encaminhar para a mentoria. |
