@@ -3,6 +3,11 @@
 import re
 import unicodedata
 
+# Quantas mensagens, no máximo, vão para a LLM. Existe por causa do limite de tokens por
+# minuto do plano gratuito da Groq (8.000 no modelo atual): prompt + mensagens precisam caber.
+# Com os guias atuais (~20 mil caracteres), 10 mensagens deixam alguma folga; 15 estouram.
+LIMITE_AMOSTRA_PADRAO = 10
+
 # Tipos de relato com maior valor para o marketing da comunidade
 TIPOS_ALTO_VALOR = ("depoimento", "entrega_projeto", "conquista", "vaga")
 TIPOS_DUVIDA = ("pergunta", "duvida")
@@ -81,3 +86,67 @@ def filtrar_e_ordenar_por_relevancia(interacoes: list[dict], limite: int | None 
     ordenadas = sorted(interacoes_pontuadas, key=lambda x: x["pontuacao_relevancia"], reverse=True)
 
     return ordenadas if limite is None else ordenadas[:limite]
+
+
+def _grupo(interacao: dict) -> str:
+    """Relatos de valor, dúvidas ou outros: usado para a amostra não esquecer nenhum tipo."""
+    tipo = _normalizar(interacao.get("tipo", "") or "")
+    if any(t in tipo for t in TIPOS_ALTO_VALOR):
+        return "relatos"
+    if any(t in tipo for t in TIPOS_DUVIDA):
+        return "duvidas"
+    return "outros"
+
+
+# Peso de cada grupo na amostra: relatos alimentam o marketing, uma dúvida basta para o FAQ
+# e as conversas gerais ajudam o sentimento a refletir a comunidade. Com limite 10: 5, 3 e 2.
+PESOS_AMOSTRA = {"relatos": 5, "duvidas": 3, "outros": 2}
+
+
+def _cotas(limite: int) -> dict:
+    """Divide `limite` vagas entre os grupos, proporcional aos pesos (maiores restos ficam com as sobras)."""
+    total_pesos = sum(PESOS_AMOSTRA.values())
+    cotas = {g: limite * peso // total_pesos for g, peso in PESOS_AMOSTRA.items()}
+    restos = sorted(
+        PESOS_AMOSTRA,
+        key=lambda g: (-(limite * PESOS_AMOSTRA[g] % total_pesos), -PESOS_AMOSTRA[g]),
+    )
+    for g in restos[: limite - sum(cotas.values())]:
+        cotas[g] += 1
+    return cotas
+
+
+def selecionar_amostra(interacoes: list[dict], limite: int | None = LIMITE_AMOSTRA_PADRAO) -> list[dict]:
+    """
+    Escolhe até `limite` mensagens para a LLM, sem deixar nenhum tipo de fora.
+
+    1. Pontua e ordena todas por relevância.
+    2. Se o lote cabe no limite (ou limite é None/0), devolve tudo, só ordenado.
+    3. Se não cabe, divide as vagas entre relatos, dúvidas e outros conforme PESOS_AMOSTRA
+       (com limite 10: 5, 3 e 2) e pega as melhores de cada grupo. Se um grupo tem menos
+       mensagens que a sua cota, a sobra vai para os outros, na ordem relatos, dúvidas, outros.
+    4. O resultado fica ordenado por relevância. Empates mantêm a ordem original.
+
+    Quem chama deve guardar o total do lote antes: a contagem oficial é a do lote inteiro.
+    """
+    pontuadas = filtrar_e_ordenar_por_relevancia(interacoes)
+    if not limite or limite <= 0 or len(pontuadas) <= limite:
+        return pontuadas
+
+    filas = {g: [] for g in PESOS_AMOSTRA}
+    for interacao in pontuadas:
+        filas[_grupo(interacao)].append(interacao)
+
+    escolhidas = []
+    for grupo, cota in _cotas(limite).items():
+        escolhidas.extend(filas[grupo][:cota])
+        filas[grupo] = filas[grupo][cota:]
+
+    # Sobras de grupos pequenos vão para quem ainda tem mensagens, por ordem de prioridade
+    while len(escolhidas) < limite and any(filas.values()):
+        for grupo in PESOS_AMOSTRA:
+            if filas[grupo] and len(escolhidas) < limite:
+                escolhidas.append(filas[grupo].pop(0))
+
+    ids = {id(i) for i in escolhidas}
+    return [i for i in pontuadas if id(i) in ids]
