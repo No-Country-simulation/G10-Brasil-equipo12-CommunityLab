@@ -67,7 +67,7 @@ Este documento mostra três transformações reais feitas pelo motor: mensagens 
 
 ## Exemplo 3: dúvida técnica vira sugestão de FAQ
 
-**Como reproduzir:** `python -m src.pipeline dados/dataset_simulado.json` (49 interações válidas; abaixo, a que originou o FAQ).
+**Como reproduzir:** `python -m src.pipeline dados/dataset_simulado.json` (47 interações válidas; abaixo, a que originou o FAQ).
 
 **Mensagem original**
 
