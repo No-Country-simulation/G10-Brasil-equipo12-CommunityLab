@@ -88,6 +88,38 @@
       "tipo_esperado": "feedback",
       "descricao_cenario": "Dado limítrofe / incompleto (texto curto e ambíguo)",
       "texto": "Achei legal o encontro de hoje."
+    },
+    {
+      "id": "DEMO_09",
+      "autor": "Rafael Martins",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
+      "tipo_esperado": "depoimento",
+      "descricao_cenario": "Relato detalhado de projeto prático, com desafios técnicos, resultados e próximos passos",
+      "texto": "Pessoal, consegui finalizar meu primeiro projeto de análise de dados usando Python e pandas! Tive bastante dificuldade para tratar os valores ausentes e remover registros duplicados, mas consegui organizar o dataset e gerar gráficos para apresentar os resultados. Agora quero melhorar a documentação do projeto e publicar o código no GitHub para receber sugestões de vocês.",
+      "topicos_esperados": [
+        "Python",
+        "Pandas",
+        "Análise de Dados",
+        "GitHub"
+      ],
+      "ativo_esperado": "post de LinkedIn"
+    },
+    {
+      "id": "DEMO_10",
+      "autor": "Camila Oliveira",
+      "canal": "#duvidas-tecnicas",
+      "tipo": "pergunta_tecnica",
+      "tipo_esperado": "pergunta_tecnica",
+      "descricao_cenario": "Dúvida técnica contextualizada sobre classificação de mensagens e roteamento em um fluxo com LangGraph",
+      "texto": "Estou montando um fluxo no LangGraph para classificar mensagens da comunidade e encaminhar cada uma para a etapa correta. A classificação funciona com mensagens simples, mas, quando o texto contém duas dúvidas diferentes, o fluxo escolhe apenas uma categoria e ignora a outra. Alguém já passou por isso? Gostaria de entender se devo ajustar a lógica de roteamento ou dividir a mensagem antes de classificá-la.",
+      "topicos_esperados": [
+        "LangGraph",
+        "Classificação de Mensagens",
+        "Roteamento"
+      ],
+      "ativo_esperado": "FAQ"
     }
+
   ]
 }
