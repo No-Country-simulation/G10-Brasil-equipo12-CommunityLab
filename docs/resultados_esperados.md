@@ -17,6 +17,8 @@ Tabela de validação do comportamento esperado do pipeline para os casos de tes
 | **DEMO_06** | *"Gente meu projetooo deu error na execução e nao consig rdodar o script"* | `pergunta_tecnica` | Negativo | Erro de execução, Script | FAQ | Média | Encaminhar para a mentoria. |
 | **DEMO_07** | *"vc6 sabem pq o OCI da erro 500 qd rodo o script??? ... 🛑😭"* | `pergunta_tecnica` | Negativo | OCI, Erro 500, Python | FAQ | Média | Encaminhar para a mentoria de infraestrutura e criar FAQ sobre OCI. |
 | **DEMO_08** | *"Achei legal o encontro de hoje."* | `feedback` | Positivo | Feedback, Eventos | Resumo de satisfação | Baixa | Armazenar nas métricas gerais de engajamento. |
+| **DEMO_09** | *"Pessoal, consegui finalizar meu primeiro projeto de análise de dados usando Python e pandas! ..."* | `depoimento` | Positivo | Python, Pandas, Análise de Dados, GitHub | post de LinkedIn | Alta | Destacar no canal de vitórias e sugerir publicação do projeto no LinkedIn. |
+| **DEMO_10** | *"Estou montando um fluxo no LangGraph ... quando o texto contém duas dúvidas diferentes, o fluxo escolhe apenas uma categoria..."* | `pergunta_tecnica` | Negativo | LangGraph, Classificação de Mensagens, Roteamento, Processamento de Texto | FAQ | Média | Encaminhar para a mentoria e criar tópico de FAQ sobre roteamento no LangGraph. |
 
 ## Observações
 
@@ -25,3 +27,6 @@ Tabela de validação do comportamento esperado do pipeline para os casos de tes
 - **Escala de sentimento:** a escala acima é a referência para comparar os resultados. O prompt (`src/prompts.py`) lista esses 5 níveis e `src/schemas.py` recusa qualquer outro valor (ignorando diferenças de maiúsculas e acentos).
 - **Nível da análise:** hoje o motor devolve o sentimento e os tópicos da **comunidade inteira**, não de cada mensagem. A comparação linha a linha depende de uma análise por mensagem, ainda não implementada.
 - Relevância: `Alta`, `Média` e `Baixa` são a referência para a avaliação. O motor ainda não devolve esse campo por mensagem.
+
+- **DEMO_09 — nuance de sentimento:** o caso relata conquista ("consegui finalizar") mas também dificuldades ("tive bastante dificuldade"). Foi classificado como `Positivo` (e não `Altamente Positivo`) para diferenciar do DEMO_01, que é comemoração pura. Decisão sujeita a ajuste do time.
+- **DEMO_10 — múltiplos tópicos:** primeiro caso com 4 tópicos específicos em mensagem longa; bom teste para verificar se o motor extrai múltiplos tópicos (casos anteriores eram mais curtos).
