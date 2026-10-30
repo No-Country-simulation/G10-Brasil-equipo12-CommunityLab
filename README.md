@@ -58,9 +58,10 @@ O fluxo de dados do **CommunityLab** segue estas etapas:
 
 ```mermaid
 graph TD
-    A["Entrada: lote JSON ou CSV"] --> B["Ingestão: valida o formato (schemas.py)"]
+    A["Entrada: lote JSON ou CSV"] --> B["Ingestão: valida o formato (contrato em schemas.py)"]
     B --> C["Limpeza: remove mensagens vazias e padroniza o texto"]
-    C --> D["Análise com LLM (Groq): sentimento, tópicos e ativos"]
+    C --> S["Seleção da amostra: até 10 mensagens, por relevância e tipo"]
+    S --> D["Análise com LLM (Groq): sentimento, tópicos e ativos"]
     D --> E{"Resposta no formato?"}
     E -->|Sim| F["Montagem: contagem e bloco do OCI feitos pelo código"]
     E -->|Não| R{"Restam tentativas? (máximo 3)"}
@@ -91,6 +92,8 @@ O formato de dados (entrada e saída) está definido em um só lugar, `src/schem
 
 **Ponto de entrada único:** a função `processar_lote(lote)`, em `src/pipeline.py`, executa as etapas 1 a 5 (e a 7, com `salvar_oci=True`). Assim, tanto uma API quanto o Streamlit podem chamar a mesma lógica, e dá para testar sem subir servidor.
 
+**Decisão de orquestração:** o fluxo é orquestrado em Python puro, pela função `processar_lote()`. O desafio pede orquestração "com Python ou ferramenta equivalente", e esta escolha cumpre o requisito com o menor custo de manutenção para um MVP. Servidor de API, fila de tarefas e workers (por exemplo FastAPI, Celery e Redis) exigiriam infraestrutura nova, com hospedagem, segurança, testes e manutenção contínua, e ficam como evolução futura. Como `processar_lote()` não depende de interface, essas camadas poderão chamá-la depois sem reescrever o motor.
+
 ```python
 from src.ingestao import ler_mensagens_comunidade
 from src.pipeline import processar_lote
@@ -110,7 +113,7 @@ Pela linha de comando: `python -m src.pipeline` (veja o guia da seção 12).
 | Mensagem vazia | A limpeza descarta (✅ implementado); se nenhuma sobrar, o pipeline avisa |
 | Mensagem duplicada | A limpeza deve descartar (📝 planejado: a limpeza atual ainda não remove duplicatas) |
 | Lote com mais de 10 mensagens | A LLM analisa uma amostra de até 10, escolhida por relevância e tipo (`--limite` muda o valor). O total do lote inteiro vem na resposta, mas o sentimento e os tópicos refletem a amostra, e o terminal avisa quando isso acontece (✅ implementado) |
-| Erro 413 da Groq (pedido grande demais) | A mensagem de erro mostra o limite e o tamanho pedido. Use um `--limite` menor (✅ mensagem clara) |
+| Erro 413 da Groq (pedido grande demais) | A mensagem repassa o erro da Groq, que informa o limite e o tamanho pedido. Use um `--limite` menor (✅ mensagem clara) |
 | A LLM responde fora do formato JSON | Valida, tenta de novo até 3 vezes contando à LLM o motivo da recusa e, se continuar falhando, devolve um erro claro. A análise é do lote inteiro, não mensagem a mensagem (✅ implementado) |
 | Chave ou serviço da LLM com problema | Mensagem de erro clara (✅ implementado) |
 | A LLM inventa ou exagera fatos | Regras no prompt: só usar fatos das mensagens, não inflar conquistas (proposta não é contratação) e não citar o autor de relatos de dificuldade pessoal. **Não elimina o risco**: por isso a curadoria humana antes de publicar |

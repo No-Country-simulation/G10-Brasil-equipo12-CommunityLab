@@ -1,0 +1,27 @@
+{
+  "origem_comunidade": "Discord_Grupo_ONE_G10",
+  "periodo_referencia": "Semana_Teste_FewShot",
+  "interacoes": [
+    {
+      "id": "MSG_T01",
+      "autor": "Tatiane Moura",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
+      "texto": "Passei para a fase final do processo seletivo de analista de dados! O que mais pesou foi o projeto de portfólio com Python e SQL."
+    },
+    {
+      "id": "MSG_T02",
+      "autor": "Marcelo Reis",
+      "canal": "#duvidas-tecnicas",
+      "tipo": "pergunta_tecnica",
+      "texto": "Alguém sabe por que o container do Docker não sobe quando uso a porta 8501 do Streamlit?"
+    },
+    {
+      "id": "MSG_T03",
+      "autor": "Renata Cunha",
+      "canal": "#feedback-geral",
+      "tipo": "interacao_geral",
+      "texto": "Estou com medo de não conseguir terminar a trilha, tenho pouco tempo livre durante a semana."
+    }
+  ]
+}
