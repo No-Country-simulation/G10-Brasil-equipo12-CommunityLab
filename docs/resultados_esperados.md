@@ -13,7 +13,7 @@ Tabela de validação do comportamento esperado do pipeline para os casos de tes
 | **DEMO_02** | *"Alguém conseguiu conectar a API da Groq no OCI sem dar erro de autenticação?"* | `pergunta_tecnica` | Negativo | API Groq, OCI, Autenticação | FAQ | Média | Encaminhar para a mentoria e criar tópico de FAQ. |
 | **DEMO_03** | *"O material da Sprint 1 ficou excelente, mas a parte de JSON poderia ter mais exemplos."* | `feedback` | Positivo | Feedback, Material de Estudo | newsletter | Média | Registrar a sugestão de mais exemplos de JSON. |
 | **DEMO_04** | *(mensagem vazia)* | `pergunta_tecnica` | Não se aplica | Não se aplica | Nenhum | Não se aplica | Descartada na limpeza. |
-| **DEMO_05** | *Mesmo texto da DEMO_02 (repetida)* | `pergunta_tecnica` | Negativo | API Groq, OCI, Autenticação | Nenhum (duplicata) | Não se aplica | Contar uma só vez. ⚠️ A limpeza atual ainda não remove duplicatas. |
+| **DEMO_05** | *Mesmo texto da DEMO_02 (repetida)* | `pergunta_tecnica` | Negativo | API Groq, OCI, Autenticação | Nenhum (duplicata) | Não se aplica | Contar uma só vez. Descartada na limpeza (mantém a primeira ocorrência). |
 | **DEMO_06** | *"Gente meu projetooo deu error na execução e nao consig rdodar o script"* | `pergunta_tecnica` | Negativo | Erro de execução, Script | FAQ | Média | Encaminhar para a mentoria. |
 | **DEMO_07** | *"vc6 sabem pq o OCI da erro 500 qd rodo o script??? ... 🛑😭"* | `pergunta_tecnica` | Negativo | OCI, Erro 500, Python | FAQ | Média | Encaminhar para a mentoria de infraestrutura e criar FAQ sobre OCI. |
 | **DEMO_08** | *"Achei legal o encontro de hoje."* | `feedback` | Positivo | Feedback, Eventos | Resumo de satisfação | Baixa | Armazenar nas métricas gerais de engajamento. |

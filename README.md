@@ -59,7 +59,7 @@ O fluxo de dados do **CommunityLab** segue estas etapas:
 ```mermaid
 graph TD
     A["Entrada: lote JSON ou CSV"] --> B["Ingestão: valida o formato (contrato em schemas.py)"]
-    B --> C["Limpeza: remove mensagens vazias e padroniza o texto"]
+    B --> C["Limpeza: remove mensagens vazias e duplicadas e padroniza o texto"]
     C --> S["Seleção da amostra: até 10 mensagens, por relevância e tipo"]
     S --> D["Análise com LLM (Groq): sentimento, tópicos e ativos"]
     D --> E{"Resposta no formato?"}
@@ -77,7 +77,7 @@ graph TD
 | # | Etapa | O que faz | Módulo | Situação |
 | :-: | :--- | :--- | :--- | :--- |
 | 1 | Ingestão e validação | Lê o lote (JSON ou CSV) e confere o formato; informa o campo errado | `src/ingestao.py`, `src/schemas.py` | ✅ Pronto |
-| 2 | Limpeza | Remove mensagens vazias, padroniza o texto e preserva o `id` | `src/limpeza.py`, `src/relevancia.py` (pontuação de 0 a 100; em lotes grandes escolhe a amostra enviada à LLM) | ✅ Pronto (remoção de duplicatas: 📝 planejada) |
+| 2 | Limpeza | Remove mensagens vazias e duplicadas, padroniza o texto e preserva o `id` | `src/limpeza.py`, `src/relevancia.py` (pontuação de 0 a 100; em lotes grandes escolhe a amostra enviada à LLM) | ✅ Pronto |
 | 3 | Análise com LLM | Pede à LLM sentimento, tópicos e os ativos, em JSON, com nova tentativa se vier fora do formato | `src/prompts.py`, `src/ia_service.py`, `src/validacao.py`, `src/utils/prompt_loader.py` (guias em `prompts/`, com regras e exemplos few-shot) | ✅ Pronto |
 | 4 | Resumo e roteamento | A LLM decide quais ativos gerar pelas regras do prompt; o código monta a contagem e o bloco do OCI | `src/prompts.py`, `src/schemas.py` (`montar_resposta`) | ✅ Pronto |
 | 5 | Geração de ativos | Gera post de LinkedIn, destaque de newsletter e sugestão de FAQ, cada um com o tom do canal (`null` quando não há material) | Mesma chamada da etapa 3 | ✅ Pronto |
@@ -111,7 +111,7 @@ Pela linha de comando: `python -m src.pipeline` (veja o guia da seção 12).
 | :--- | :--- |
 | Lote fora do formato | A validação recusa e informa qual campo está errado (✅ implementado) |
 | Mensagem vazia | A limpeza descarta (✅ implementado); se nenhuma sobrar, o pipeline avisa |
-| Mensagem duplicada | A limpeza deve descartar (📝 planejado: a limpeza atual ainda não remove duplicatas) |
+| Mensagem duplicada | A limpeza descarta e mantém só a primeira ocorrência: mesmo autor, mesmo canal e mesmo texto, sem diferença de espaço ou de maiúscula. O mesmo texto de autores ou canais diferentes não é duplicata (✅ implementado) |
 | Lote com mais de 10 mensagens | A LLM analisa uma amostra de até 10, escolhida por relevância e tipo (`--limite` muda o valor). O total do lote inteiro vem na resposta, mas o sentimento e os tópicos refletem a amostra, e o terminal avisa quando isso acontece (✅ implementado) |
 | Erro 413 da Groq (pedido grande demais) | A mensagem repassa o erro da Groq, que informa o limite e o tamanho pedido. Use um `--limite` menor (✅ mensagem clara) |
 | A LLM responde fora do formato JSON | Valida, tenta de novo até 3 vezes contando à LLM o motivo da recusa e, se continuar falhando, devolve um erro claro. A análise é do lote inteiro, não mensagem a mensagem (✅ implementado) |
@@ -231,7 +231,7 @@ A resposta segue o formato do desafio:
 | `topicos_principais` | A LLM | Lista de temas curtos |
 | `post_linkedin`, `destaque_newsletter_semanal`, `sugestao_conteudo_faq` | A LLM | Cada um vem `null` quando o lote não tem material para ele (por exemplo, sem pergunta técnica não há FAQ) |
 | `potencial_engajamento` | A LLM | `Alto`, `Médio` ou `Baixo` |
-| `armazenamento_oci` | O código | `pendente_upload`, `salvo_com_sucesso` ou `falha_ao_salvar` (com `detalhe_erro`) |
+| `armazenamento_oci` | O código | `pendente_upload` (rodou sem `--oci`: o pacote foi só para `saida/`), `salvo_com_sucesso` ou `falha_ao_salvar` (com `detalhe_erro`) |
 
 Ao usar a resposta no código, chame `resposta.para_dict()`: ele devolve `copy` (e não `copy_`) e é o formato que deve ser impresso, salvo no OCI ou mostrado no Streamlit.
 
@@ -388,6 +388,7 @@ python -m unittest discover -s tests -t . -v
 
 | Arquivo | O que confere |
 | :--- | :--- |
+| `tests/test_limpeza.py` | Remove mensagem vazia, padroniza espaços e quebras, descarta duplicata mantendo a primeira (mesmo com diferença de espaço ou maiúscula), não trata como duplicata o mesmo texto de autores ou canais diferentes, mantém a ordem, não altera o lote de entrada e funciona com os dados de demonstração e com o dataset simulado |
 | `tests/test_relevancia.py` | Pontuação por tipo e palavras-chave, sem diferença de acento ou maiúscula, sem casar "vaga" dentro de "devagar", teto de 100 e ordem estável |
 | `tests/test_amostra.py` | Seleção da amostra enviada à LLM: limite padrão de 10, cotas de 5 relatos, 3 dúvidas e 2 outras, sobra de grupos pequenos e nenhum tipo de fora |
 | `tests/test_pipeline_amostra.py` | Com um cliente falso: lote grande vai reduzido à LLM, mas o total informado é o do lote inteiro; `--limite` e aviso de amostra |
@@ -396,7 +397,7 @@ python -m unittest discover -s tests -t . -v
 | `tests/test_ia_service.py` | Com um cliente falso: o system prompt leva os guias e o lembrete final, há nova tentativa com o motivo da recusa e, esgotadas as tentativas, o erro é informado em vez de gerar conteúdo inventado |
 | `tests/test_pipeline_saida.py` | A saída do terminal não quebra com emojis quando é redirecionada (Windows) |
 
-Resultado esperado: `Ran 45 tests ... OK`. Testes que dependem da Groq ou da OCI reais continuam sendo manuais (passos 7 e 8).
+Resultado esperado: `Ran 55 tests ... OK`. Testes que dependem da Groq ou da OCI reais continuam sendo manuais (passos 7 e 8).
 
 ## 🤝 13. Como Contribuir
 
