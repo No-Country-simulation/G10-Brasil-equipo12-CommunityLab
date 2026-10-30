@@ -12,6 +12,7 @@ Linha de comando:
 """
 import argparse
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -22,13 +23,15 @@ from dotenv import load_dotenv
 from src.ia_service import ErroServicoLLM, analisar_lote
 from src.ingestao import ler_mensagens_comunidade, validar_lote
 from src.limpeza import limpar_dados_comunidade
-from src.relevancia import filtrar_e_ordenar_por_relevancia
+from src.relevancia import LIMITE_AMOSTRA_PADRAO, selecionar_amostra
 from src.oracle_storage import BUCKET_PADRAO, montar_caminho, salvar_no_oci
 from src.schemas import ArmazenamentoOci, LoteEntrada, RespostaCommunityLab, montar_resposta
 
 load_dotenv(override=True)
 
 PASTA_SAIDA_PADRAO = "saida"
+
+logger = logging.getLogger(__name__)
 
 
 class ErroLoteVazio(ValueError):
@@ -46,6 +49,7 @@ def processar_lote(
     salvar_oci: bool = False,
     pasta_saida: Optional[str] = PASTA_SAIDA_PADRAO,
     tentativas: int = 3,
+    limite_amostra: Optional[int] = LIMITE_AMOSTRA_PADRAO,
     cliente_llm=None,
     cliente_oci=None,
 ) -> RespostaCommunityLab:
@@ -58,17 +62,29 @@ def processar_lote(
     levanta ValueError; falha ao salvar no OCI NÃO levanta erro: o motivo vai em
     armazenamento_oci (status "falha_ao_salvar").
 
+    limite_amostra: máximo de mensagens enviadas à LLM (padrão 10, por causa do limite de
+    tokens do plano gratuito). Lotes maiores são reduzidos por relevância e por tipo; o total
+    informado na resposta continua sendo o do lote inteiro, mas o sentimento e os tópicos
+    refletem a amostra. Use None ou 0 para enviar tudo.
+
     cliente_llm e cliente_oci existem para testes (clientes falsos).
     """
     dados = validar_lote(lote)
     dados_limpos = limpar_dados_comunidade(dados)
 
-    # Aplica a pontuação e ordenação por relevância nas interações limpas
-    if "interacoes" in dados_limpos:
-        dados_limpos["interacoes"] = filtrar_e_ordenar_por_relevancia(dados_limpos["interacoes"])
-
-    if not dados_limpos["interacoes"]:
+    if not dados_limpos.get("interacoes"):
         raise ErroLoteVazio("Nenhuma interação com texto sobrou depois da limpeza.")
+
+    # A contagem oficial é a do lote inteiro, mesmo que a LLM analise só uma amostra
+    total_lote = len(dados_limpos["interacoes"])
+    dados_limpos["interacoes"] = selecionar_amostra(dados_limpos["interacoes"], limite_amostra)
+    if len(dados_limpos["interacoes"]) < total_lote:
+        logger.warning(
+            "Lote com %d mensagens: a LLM analisou uma amostra de %d (por relevância e tipo). "
+            "Sentimento e tópicos refletem a amostra.",
+            total_lote,
+            len(dados_limpos["interacoes"]),
+        )
     
     lote_valido = LoteEntrada.model_validate(dados_limpos)
     periodo = lote_valido.periodo_referencia
@@ -80,7 +96,7 @@ def processar_lote(
         caminho_objeto=montar_caminho(periodo),
         status="pendente_upload",
     )
-    resposta = montar_resposta(lote_valido, analise, oci)
+    resposta = montar_resposta(lote_valido, analise, oci, total_interacoes=total_lote)
 
     if salvar_oci:
         # O arquivo guardado no bucket não carrega o próprio status de envio
@@ -97,18 +113,38 @@ def processar_lote(
     return resposta
 
 
+def _garantir_saida_utf8() -> None:
+    """Força a saída do terminal em UTF-8.
+
+    No Windows, quando a saída é redirecionada (arquivo, pipe, Measure-Command),
+    o Python usa cp1252 e quebra ao imprimir emojis como 🎉 (UnicodeEncodeError).
+    """
+    for fluxo in (sys.stdout, sys.stderr):
+        try:
+            fluxo.reconfigure(encoding="utf-8")
+        except (AttributeError, ValueError):
+            pass  # fluxo sem suporte a reconfigure: segue como está
+
+
 def main(argv=None) -> int:
+    _garantir_saida_utf8()
     parser = argparse.ArgumentParser(description="CommunityLab: transforma interações em ativos de distribuição.")
     parser.add_argument("arquivo", nargs="?", default="dados/mensagens_exemplo.json", help="arquivo .json ou .csv")
     parser.add_argument("--oci", action="store_true", help="envia o pacote ao OCI Object Storage")
     parser.add_argument("--periodo", help="substitui o periodo_referencia do arquivo (ex.: Semana_Teste)")
+    parser.add_argument(
+        "--limite",
+        type=int,
+        default=LIMITE_AMOSTRA_PADRAO,
+        help="máximo de mensagens enviadas à LLM (padrão %(default)s; 0 = sem limite)",
+    )
     args = parser.parse_args(argv)
 
     try:
         lote = ler_mensagens_comunidade(args.arquivo)
         if args.periodo:
             lote["periodo_referencia"] = args.periodo
-        resposta = processar_lote(lote, salvar_oci=args.oci)
+        resposta = processar_lote(lote, salvar_oci=args.oci, limite_amostra=args.limite)
     except (ValueError, FileNotFoundError, ErroServicoLLM) as erro:
         print(f"❌ {erro}")
         return 1

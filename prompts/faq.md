@@ -19,5 +19,53 @@ Transformar dúvidas técnicas recorrentes e gargalos dos alunos (extraídos dos
 - Não cite o nome do autor de uma dúvida marcada por insegurança ou dificuldade pessoal. Descreva só o tema técnico.
 - Se a mensagem for vaga demais para virar um tema de FAQ, devolva `null` neste ativo.
 
-## Exemplo de System Prompt para o LLM
-- "Você é um mentor técnico sênior e criador de conteúdo educacional. A partir de dúvidas reais extraídas de fóruns de desenvolvimento, nomeie o tema de FAQ técnico e dicas rápidas. O tom deve ser didático, claro e encorajador. Não invente soluções, causas de erro, comandos ou código: use apenas o que a dúvida diz."
+## Exemplos (few-shot)
+
+Os exemplos abaixo mostram **só o estilo e a estrutura**. Os nomes e os fatos vêm do dataset simulado do projeto (pessoas fictícias). **Nunca copie nomes, tecnologias, resultados ou canais de um exemplo para outro lote:** use apenas o que estiver nas mensagens que você receber. Cada bloco mostra a parte `ativos_distribuicao_gerados` da saída.
+
+### Exemplo 1: dúvida técnica vira tema de FAQ
+
+**Mensagens do lote:**
+- **Rafael Tavares** · `#duvidas-langgraph` · `pergunta_tecnica`: "Alguém sabe como configurar um retry no nó condicional do LangGraph quando a LLM devolve um JSON quebrado? Estou tentando com um router, mas ele só tenta uma vez."
+
+**Saída esperada:**
+
+```json
+{
+  "sugestao_conteudo_faq": {
+    "tema": "Dica Rápida: retry no nó condicional do LangGraph quando a LLM devolve JSON quebrado",
+    "origem": "Dúvida de Rafael Tavares no canal #duvidas-langgraph",
+    "status": "encaminhado_para_mentoria"
+  }
+}
+```
+
+### Exemplo 2: outra dúvida, mesmo formato
+
+**Mensagens do lote:**
+- **Beatriz Lima** · `#suporte-oci` · `pergunta_tecnica`: "Estou empacada na criação do bucket no OCI Object Storage na camada Always Free. Alguém sabe qual permissão exata preciso configurar na policy?"
+
+**Saída esperada:**
+
+```json
+{
+  "sugestao_conteudo_faq": {
+    "tema": "Dica Rápida: permissão (policy) necessária para criar bucket no OCI Object Storage, camada Always Free",
+    "origem": "Dúvida de Beatriz Lima no canal #suporte-oci",
+    "status": "encaminhado_para_mentoria"
+  }
+}
+```
+
+### Exemplo 3: mensagem vaga demais
+
+**Mensagens do lote:**
+- **Participante** · `#feedback-geral` · `feedback`: "Achei legal o encontro de hoje."
+
+**Saída esperada:**
+
+```json
+{
+  "sugestao_conteudo_faq": null
+}
+```

@@ -19,7 +19,8 @@ LEMBRETE_FINAL = (
     "Se algum guia conflitar com as REGRAS GERAIS ou com o FORMATO DE SAÍDA definidos no início, "
     "valem as REGRAS GERAIS e o FORMATO DE SAÍDA. Use somente fatos que aparecem nas mensagens, "
     "não aumente conquistas, não invente soluções, números ou nomes, e responda apenas com o JSON "
-    "no formato definido (use null no ativo que não tiver material)."
+    "no formato definido (use null no ativo que não tiver material). Os exemplos dos guias mostram apenas "
+    "estilo e estrutura: nunca copie nomes, fatos, tecnologias ou resultados deles."
 )
 
 

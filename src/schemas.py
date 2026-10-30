@@ -142,13 +142,21 @@ class AnaliseLLM(BaseModel):
 
 
 def montar_resposta(
-    lote: LoteEntrada, analise: AnaliseLLM, oci: Optional[ArmazenamentoOci] = None
+    lote: LoteEntrada,
+    analise: AnaliseLLM,
+    oci: Optional[ArmazenamentoOci] = None,
+    total_interacoes: Optional[int] = None,
 ) -> RespostaCommunityLab:
-    """Junta o que é da LLM com o que é determinístico (contagem e OCI)."""
+    """Junta o que é da LLM com o que é determinístico (contagem e OCI).
+
+    total_interacoes: quando a LLM analisa só uma amostra do lote, informe aqui o total
+    do lote inteiro. Se omitido, vale a quantidade de interações de `lote`."""
     return RespostaCommunityLab(
         status="sucesso",
         resumo_comunidade=ResumoComunidade(
-            total_interacoes_processadas=len(lote.interacoes),
+            total_interacoes_processadas=(
+                total_interacoes if total_interacoes is not None else len(lote.interacoes)
+            ),
             sentimento_predominante=analise.sentimento_predominante,
             topicos_principais=analise.topicos_principais,
         ),
