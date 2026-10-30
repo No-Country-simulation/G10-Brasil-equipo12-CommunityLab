@@ -4,7 +4,7 @@
 
 > Motor Inteligente de Transformação e Distribuição para Comunidades Digitais
 
-**Hackathon ONE G10 · Oracle Next Education & Alura · Equipe G10-BRASIL-equipo 12**
+**Hackathon ONE G10 · Oracle Next Education & Alura · Equipe G10-BRASIL-equipe 12**
 
 <!--
   README ÚNICO: junta o que estava nos PRs #4, #6 e #9, o esqueleto de seções e as decisões do time.
@@ -76,14 +76,18 @@ graph TD
 | # | Etapa | O que faz | Módulo | Situação |
 | :-: | :--- | :--- | :--- | :--- |
 | 1 | Ingestão e validação | Lê o lote (JSON ou CSV) e confere o formato; informa o campo errado | `src/ingestao.py`, `src/schemas.py` | ✅ Pronto |
-| 2 | Limpeza | Remove mensagens vazias, padroniza o texto e preserva o `id` | `src/limpeza.py`, `src/relevancia.py` (pontuação de 0 a 100 que só reordena, sem cortar mensagens) | ✅ Pronto (remoção de duplicatas: 📝 planejada) |
-| 3 | Análise com LLM | Pede à LLM sentimento, tópicos e os ativos, em JSON, com nova tentativa se vier fora do formato | `src/prompts.py`, `src/ia_service.py`, `src/validacao.py`, `src/utils/prompt_loader.py` (guias em `prompts/`) | ✅ Pronto |
+| 2 | Limpeza | Remove mensagens vazias, padroniza o texto e preserva o `id` | `src/limpeza.py`, `src/relevancia.py` (pontuação de 0 a 100; em lotes grandes escolhe a amostra enviada à LLM) | ✅ Pronto (remoção de duplicatas: 📝 planejada) |
+| 3 | Análise com LLM | Pede à LLM sentimento, tópicos e os ativos, em JSON, com nova tentativa se vier fora do formato | `src/prompts.py`, `src/ia_service.py`, `src/validacao.py`, `src/utils/prompt_loader.py` (guias em `prompts/`, com regras e exemplos few-shot) | ✅ Pronto |
 | 4 | Resumo e roteamento | A LLM decide quais ativos gerar pelas regras do prompt; o código monta a contagem e o bloco do OCI | `src/prompts.py`, `src/schemas.py` (`montar_resposta`) | ✅ Pronto |
 | 5 | Geração de ativos | Gera post de LinkedIn, destaque de newsletter e sugestão de FAQ, cada um com o tom do canal (`null` quando não há material) | Mesma chamada da etapa 3 | ✅ Pronto |
 | 6 | Curadoria e aprovação | Uma pessoa revisa e aprova na interface | Streamlit | 📝 Planejado |
 | 7 | Armazenamento | Salva o pacote final no bucket da OCI | `src/oracle_storage.py`, `src/pipeline.py` (opção `--oci`) | ✅ Ligado ao pipeline e testado com upload real (confirmado no console em 27/10/2026) |
 
 O formato de dados (entrada e saída) está definido em um só lugar, `src/schemas.py`, e todos os módulos usam esses modelos. A resposta da LLM é validada em `src/validacao.py`, **sem valores de segurança falsos**: se a LLM responder fora do formato, o erro é informado em vez de gerar conteúdo inventado com `status: "sucesso"`.
+
+**Guias de tom de voz e exemplos (few-shot):** os arquivos `prompts/linkedin.md`, `prompts/newsletter.md` e `prompts/faq.md` definem o tom de cada canal, as regras de fidelidade (só fatos das mensagens, proposta não é contratação, não atribuir causas que a pessoa não disse, usar os verbos do relato) e exemplos de entrada e saída. O código carrega os três, junta ao prompt do sistema e termina com um lembrete de precedência. Os exemplos mostram só estilo e estrutura: a LLM não deve copiar nomes nem fatos deles.
+
+**Limite de tamanho:** no plano gratuito da Groq, o modelo atual aceita 8.000 tokens por minuto (limite informado pelo erro 413 de 29/10/2026). Como os guias com exemplos ocupam boa parte disso, o pipeline envia à LLM no máximo **10 mensagens**, escolhidas por relevância e tipo (5 relatos, 3 dúvidas e 2 outras). O `total_interacoes_processadas` continua sendo o do lote inteiro, mas o sentimento e os tópicos refletem a amostra. A opção `--limite` muda o valor.
 
 **Ponto de entrada único:** a função `processar_lote(lote)`, em `src/pipeline.py`, executa as etapas 1 a 5 (e a 7, com `salvar_oci=True`). Assim, tanto uma API quanto o Streamlit podem chamar a mesma lógica, e dá para testar sem subir servidor.
 
@@ -105,6 +109,8 @@ Pela linha de comando: `python -m src.pipeline` (veja o guia da seção 12).
 | Lote fora do formato | A validação recusa e informa qual campo está errado (✅ implementado) |
 | Mensagem vazia | A limpeza descarta (✅ implementado); se nenhuma sobrar, o pipeline avisa |
 | Mensagem duplicada | A limpeza deve descartar (📝 planejado: a limpeza atual ainda não remove duplicatas) |
+| Lote com mais de 10 mensagens | A LLM analisa uma amostra de até 10, escolhida por relevância e tipo (`--limite` muda o valor). O total do lote inteiro vem na resposta, mas o sentimento e os tópicos refletem a amostra, e o terminal avisa quando isso acontece (✅ implementado) |
+| Erro 413 da Groq (pedido grande demais) | A mensagem de erro mostra o limite e o tamanho pedido. Use um `--limite` menor (✅ mensagem clara) |
 | A LLM responde fora do formato JSON | Valida, tenta de novo até 3 vezes contando à LLM o motivo da recusa e, se continuar falhando, devolve um erro claro. A análise é do lote inteiro, não mensagem a mensagem (✅ implementado) |
 | Chave ou serviço da LLM com problema | Mensagem de erro clara (✅ implementado) |
 | A LLM inventa ou exagera fatos | Regras no prompt: só usar fatos das mensagens, não inflar conquistas (proposta não é contratação) e não citar o autor de relatos de dificuldade pessoal. **Não elimina o risco**: por isso a curadoria humana antes de publicar |
@@ -117,7 +123,7 @@ Pela linha de comando: `python -m src.pipeline` (veja o guia da seção 12).
 ### Decisões do time (registradas em 21/10/2026)
 
 - **Modelo (LLM):** GPT-OSS 120B (`openai/gpt-oss-120b`), da OpenAI
-- **Provedor:** Groq (plano gratuito)
+- **Provedor:** Groq (plano gratuito, com limite de tokens por minuto: veja "Limite de tamanho" na seção 5)
 - **Interface:** Streamlit
 
 | Parte | Tecnologia | Situação |
@@ -150,6 +156,9 @@ O motor categoriza as interações da comunidade em 5 tipos:
 **Arquivos de dados:**
 
 - [`dados/mensagens_exemplo.json`](dados/mensagens_exemplo.json): mensagens de exemplo
+- [`dados/dataset_simulado.json`](dados/dataset_simulado.json): 50 mensagens simuladas (veja [`docs/dataset_simulado.md`](docs/dataset_simulado.md))
+- [`dados/caso_proposta_estagio.json`](dados/caso_proposta_estagio.json): lote pequeno com uma proposta de estágio e um freela, sem pergunta técnica
+- [`dados/caso_teste_few_shot.json`](dados/caso_teste_few_shot.json): lote pequeno com mensagens que não estão nos exemplos few-shot, para conferir se a LLM generaliza em vez de copiar
 - [`dados/casos_demo.json`](dados/casos_demo.json): casos de demonstração, incluindo dados com sujeira (mensagem vazia, repetida, com erros de digitação, com ruído e texto curto e ambíguo)
 - [`docs/resultados_esperados.md`](docs/resultados_esperados.md): tabela de resultados esperados dos casos de demonstração
 
@@ -214,7 +223,7 @@ A resposta segue o formato do desafio:
 
 | Campo | Quem preenche | Observação |
 | :--- | :--- | :--- |
-| `total_interacoes_processadas` | O código | Conta as interações que sobraram depois da limpeza |
+| `total_interacoes_processadas` | O código | Conta as interações do lote inteiro que sobraram depois da limpeza, mesmo quando a LLM analisa só uma amostra |
 | `sentimento_predominante` | A LLM | Um destes: `Altamente Positivo`, `Positivo`, `Neutro`, `Negativo`, `Altamente Negativo` |
 | `topicos_principais` | A LLM | Lista de temas curtos |
 | `post_linkedin`, `destaque_newsletter_semanal`, `sugestao_conteudo_faq` | A LLM | Cada um vem `null` quando o lote não tem material para ele (por exemplo, sem pergunta técnica não há FAQ) |
@@ -294,7 +303,7 @@ Este guia cobre o pipeline completo: leitura, limpeza, análise com a LLM, monta
 
 ```bash
 git clone https://github.com/No-Country-simulation/G10-Brasil-equipo12-CommunityLab.git
-cd G10-Brasil-equipe12-CommunityLab
+cd G10-Brasil-equipo12-CommunityLab
 ```
 
 **3. Criar e ativar o ambiente virtual**
@@ -345,6 +354,7 @@ Outros usos:
 python -m src.pipeline dados/dataset_simulado.json                # outro arquivo (JSON ou CSV)
 python -m src.pipeline dados/caso_proposta_estagio.json           # lote pequeno, sem pergunta técnica
 python -m src.pipeline dados/dataset_simulado.json --periodo Semana_Teste   # troca o período
+python -m src.pipeline dados/dataset_simulado.json --limite 8               # menos mensagens para a LLM (padrão: 10)
 ```
 
 **8. Testar o envio para a OCI (opcional)**
@@ -365,11 +375,6 @@ python -m src.pipeline --oci --periodo Semana_Teste
 
 No final, o bloco `armazenamento_oci` deve mostrar `salvo_com_sucesso`. Se mostrar `falha_ao_salvar`, o campo `detalhe_erro` informa o tipo do erro (por exemplo, configuração da OCI ausente).
 
-## 🤝 13. Como Contribuir
-
-- Padrão de mensagens de commit: [`docs/padrao-commits.md`](docs/padrao-commits.md)
-- Fluxo de trabalho com branches e Pull Requests: [`docs/fluxo-branches.md`](docs/fluxo-branches.md)
-
 **9. Rodar os testes automáticos**
 
 Os testes usam só a biblioteca padrão do Python (`unittest`), rodam **sem chave de API e sem internet** e não enviam nada à OCI. Na pasta raiz:
@@ -380,11 +385,20 @@ python -m unittest discover -s tests -t . -v
 
 | Arquivo | O que confere |
 | :--- | :--- |
-| `tests/test_relevancia.py` | Pontuação por tipo e palavras-chave, sem diferença de acento ou maiúscula, sem casar "vaga" dentro de "devagar", teto de 100, ordem estável e nenhuma mensagem cortada por padrão |
-| `tests/test_prompt_loader.py` | Os 3 guias de `prompts/` carregam e nomes de canal inválidos (como `../README`) são recusados |
+| `tests/test_relevancia.py` | Pontuação por tipo e palavras-chave, sem diferença de acento ou maiúscula, sem casar "vaga" dentro de "devagar", teto de 100 e ordem estável |
+| `tests/test_amostra.py` | Seleção da amostra enviada à LLM: limite padrão de 10, cotas de 5 relatos, 3 dúvidas e 2 outras, sobra de grupos pequenos e nenhum tipo de fora |
+| `tests/test_pipeline_amostra.py` | Com um cliente falso: lote grande vai reduzido à LLM, mas o total informado é o do lote inteiro; `--limite` e aviso de amostra |
+| `tests/test_prompt_loader.py` | Os 3 guias de `prompts/` carregam, trazem as regras de fidelidade e nomes de canal inválidos (como `../README`) são recusados |
+| `tests/test_exemplos_few_shot.py` | Os exemplos few-shot dos guias seguem o contrato, não inflam conquistas, têm hashtags só no final e o FAQ não traz solução |
 | `tests/test_ia_service.py` | Com um cliente falso: o system prompt leva os guias e o lembrete final, há nova tentativa com o motivo da recusa e, esgotadas as tentativas, o erro é informado em vez de gerar conteúdo inventado |
+| `tests/test_pipeline_saida.py` | A saída do terminal não quebra com emojis quando é redirecionada (Windows) |
 
-Resultado esperado: `Ran 19 tests ... OK`. Testes que dependem da Groq ou da OCI reais continuam sendo manuais (passos 7 e 8).
+Resultado esperado: `Ran 45 tests ... OK`. Testes que dependem da Groq ou da OCI reais continuam sendo manuais (passos 7 e 8).
+
+## 🤝 13. Como Contribuir
+
+- Padrão de mensagens de commit: [`docs/padrao-commits.md`](docs/padrao-commits.md)
+- Fluxo de trabalho com branches e Pull Requests: [`docs/fluxo-branches.md`](docs/fluxo-branches.md)
 
 ## 🗓️ 14. Status das Sprints
 
