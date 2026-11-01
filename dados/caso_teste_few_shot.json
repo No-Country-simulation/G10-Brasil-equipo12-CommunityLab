@@ -22,6 +22,13 @@
       "canal": "#feedback-geral",
       "tipo": "interacao_geral",
       "texto": "Estou com medo de não conseguir terminar a trilha, tenho pouco tempo livre durante a semana."
+    },
+    {
+      "id": "MSG_T04",
+      "autor": "Camila Duarte",
+      "canal": "#conquistas-e-vagas",
+      "tipo": "depoimento",
+      "texto": "Gente, saiu o resultado: fui aprovada como Analista de Dados Júnior! O projeto de portfólio com Pandas e análise de sentimento que fiz no curso foi o assunto principal da entrevista. Obrigada a todo mundo que revisou meu repositório!"
     }
   ]
 }
