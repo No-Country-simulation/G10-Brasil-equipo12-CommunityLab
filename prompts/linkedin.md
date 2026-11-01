@@ -22,7 +22,7 @@ Celebrar as conquistas da comunidade, destacar histórias reais de superação, 
 - **Títulos e chamadas seguem as mesmas regras.** Eles costumam exagerar porque resumem demais: não escreva "garantido", "garantiu", "conquistou" ou "contratado" para o que foi só proposta, convite ou entrevista. Se a mensagem diz "recebi uma proposta", o título diz "proposta".
 - **Escreva em terceira pessoa, na voz oficial da comunidade** (por exemplo, "Gustavo compartilhou que..."). Nunca em primeira pessoa, como se fosse o aluno falando. **Cada conquista pertence a quem a relatou:** não junte conquistas de pessoas diferentes como se fossem da mesma pessoa.
 - Não generalize sem base: evite "muitos", "vários" e "todos". Prefira os casos concretos que aparecem nas mensagens.
-- Não atribua à pessoa sentimentos, falas ou causas que ela não expressou (por exemplo, "foi decisivo" quando a mensagem diz "foi o assunto principal").
+- Não atribua à pessoa sentimentos, falas ou causas que ela não expressou. Para o papel de um projeto ou de uma tecnologia, repita as palavras dela: se a mensagem diz "foi o assunto principal", escreva "foi o assunto principal".
 - Se faltar informação para escrever o post, escreva menos. Nunca complete com suposições.
 
 ## Exemplos (few-shot)
@@ -32,7 +32,7 @@ Os exemplos abaixo mostram **só o estilo e a estrutura**. Os nomes e os fatos v
 ### Exemplo 1: conquista plena
 
 **Mensagens do lote:**
-- **Mariana Souza** · `#conquistas-e-vagas` · `depoimento`: "Pessoal, passei no processo seletivo para Desenvolvedora Júnior de IA! O projeto do curso de LangChain e OCI que construí no portfólio fez toda a diferença na entrevista técnica."
+- **Mariana Souza** · `#conquistas-e-vagas` · `depoimento`: "Pessoal, passei no processo seletivo para Desenvolvedora Júnior de IA! O projeto do curso de LangChain e OCI que construí no portfólio foi o assunto da entrevista técnica."
 
 **Saída esperada:**
 
@@ -40,7 +40,7 @@ Os exemplos abaixo mostram **só o estilo e a estrutura**. Os nomes e os fatos v
 {
   "post_linkedin": {
     "titulo": "Mariana é aprovada em processo seletivo para Desenvolvedora Júnior de IA",
-    "copy": "A Mariana Souza foi aprovada no processo seletivo para Desenvolvedora Júnior de IA. 🎉\n\nSegundo ela, o projeto de LangChain e OCI que construiu no portfólio fez toda a diferença na entrevista técnica.\n\nParabéns, Mariana!\n\nE você, já tem um projeto prático no portfólio? Conte para a gente nos comentários.\n\n#CarreiraTech #LangChain #OCI",
+    "copy": "A Mariana Souza foi aprovada no processo seletivo para Desenvolvedora Júnior de IA. 🎉\n\nSegundo ela, o projeto de LangChain e OCI que construiu no portfólio foi o assunto da entrevista técnica.\n\nParabéns, Mariana!\n\nE você, já tem um projeto prático no portfólio? Conte para a gente nos comentários.\n\n#CarreiraTech #LangChain #OCI",
     "canal_recomendado": "LinkedIn Oficial",
     "potencial_engajamento": "Alto"
   }
