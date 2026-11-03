@@ -90,6 +90,8 @@ O formato de dados (entrada e saída) está definido em um só lugar, `src/schem
 
 **Limite de tamanho:** no plano gratuito da Groq, o modelo atual aceita 8.000 tokens por minuto (limite informado pelo erro 413 de 29/10/2026). Como os guias com exemplos ocupam boa parte disso, o pipeline envia à LLM no máximo **10 mensagens**, escolhidas por relevância e tipo (5 relatos, 3 dúvidas e 2 outras). O `total_interacoes_processadas` continua sendo o do lote inteiro, mas o sentimento e os tópicos refletem a amostra. A opção `--limite` muda o valor.
 
+**Régua de relevância:** os critérios de Alta, Média e Baixa relevância e o cálculo da pontuação de 0 a 100 estão em [`docs/regua_relevancia.md`](docs/regua_relevancia.md).
+
 **Ponto de entrada único:** a função `processar_lote(lote)`, em `src/pipeline.py`, executa as etapas 1 a 5 (e a 7, com `salvar_oci=True`). Assim, tanto uma API quanto o Streamlit podem chamar a mesma lógica, e dá para testar sem subir servidor.
 
 **Decisão de orquestração:** o fluxo é orquestrado em Python puro, pela função `processar_lote()`. O desafio pede orquestração "com Python ou ferramenta equivalente", e esta escolha cumpre o requisito com o menor custo de manutenção para um MVP. Servidor de API, fila de tarefas e workers (por exemplo FastAPI, Celery e Redis) exigiriam infraestrutura nova, com hospedagem, segurança, testes e manutenção contínua, e ficam como evolução futura. Como `processar_lote()` não depende de interface, essas camadas poderão chamá-la depois sem reescrever o motor.
@@ -139,7 +141,8 @@ Pela linha de comando: `python -m src.pipeline` (veja o guia da seção 12).
 | Armazenamento | OCI Object Storage (camada Always Free), via SDK Python `oci` | Ligado ao pipeline (opção `--oci`) e testado com upload real |
 | Contrato de dados | Pydantic (`src/schemas.py`) | Em uso |
 | Dependências | `requirements.txt` (`groq`, `python-dotenv`, `oci`, `pydantic`) | Em uso |
-| Previstos no desenho do time | FastAPI, Pandas e LangChain | Ainda não usados no código |
+| Evolução futura | FastAPI, Celery e Redis (servidor de API, fila e workers; veja a decisão de orquestração na seção 5) | Fora do MVP |
+| Previstos no desenho do time | Pandas e LangChain | Ainda não usados no código |
 | Versionamento | GitHub, com branches e Pull Requests | Em uso |
 
 > Usamos **somente recursos da camada Always Free** da OCI, conforme exige o programa ONE.
@@ -273,6 +276,8 @@ ativos/2026-semana-04/pacote-distribuicao.json
 
 **Variáveis opcionais** no `.env` (valores padrão entre parênteses): `OCI_BUCKET` (`communitylab-ativos-marketing`), `OCI_CONFIG_FILE` (`~/.oci/config`) e `OCI_PROFILE` (`DEFAULT`).
 
+**Autenticação:** o passo a passo para configurar a OCI na sua máquina, sem expor chaves, está em [`docs/guia-autenticacao-oci.md`](docs/guia-autenticacao-oci.md).
+
 **No pipeline:** `processar_lote(lote, salvar_oci=True)` (ou `python -m src.pipeline --oci`) chama `salvar_no_oci` e coloca o resultado em `armazenamento_oci`. O arquivo enviado ao bucket é o pacote sem esse bloco. Se o envio falhar, a análise não se perde: o motivo aparece no próprio bloco (`status: falha_ao_salvar`).
 
 > **Cuidado:** enviar sobrescreve o objeto do período. Por isso o envio só acontece com `--oci` (ou `salvar_oci=True`), e os testes devem usar um período de teste (`--periodo Semana_Teste`), nunca `Semana_04`.
@@ -300,7 +305,7 @@ Este guia cobre o pipeline completo: leitura, limpeza, análise com a LLM, monta
 
 - Python 3 e Git instalados
 - Uma chave de API da Groq (plano gratuito)
-- Para o teste de envio à OCI (passo 8): uma conta Oracle Cloud com um bucket Always Free e o arquivo de configuração da OCI
+- Para o teste de envio à OCI (passo 8): uma conta Oracle Cloud com um bucket Always Free e o arquivo de configuração da OCI (veja [`docs/guia-autenticacao-oci.md`](docs/guia-autenticacao-oci.md))
 
 **2. Clonar o repositório**
 
@@ -406,12 +411,14 @@ Resultado esperado: `Ran 57 tests ... OK`. Testes que dependem da Groq ou da OCI
 
 ## 🗓️ 14. Status das Sprints
 
+Legenda: ✅ concluída · 🔄 em andamento · ☐ não iniciada
+
 | Sprint | Período | Situação |
 | :--- | :--- | :--- |
-| Sprint 0 | 12/10 a 18/10 | ☐ |
-| Sprint 1 | 19/10 a 25/10 | ☐ |
-| Sprint 2 | 26/10 a 01/11 | ☐ |
-| Sprint 3 | 02/11 a 08/11 | ☐ |
+| Sprint 0 | 12/10 a 18/10 | ✅ |
+| Sprint 1 | 19/10 a 25/10 | ✅ |
+| Sprint 2 | 26/10 a 01/11 | ✅ |
+| Sprint 3 | 02/11 a 08/11 | 🔄 |
 | Sprint 4 | 09/11 a 15/11 | ☐ |
 | Sprint 5 | 16/11 a 22/11 | ☐ |
 
