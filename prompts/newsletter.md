@@ -20,7 +20,7 @@ Sintetizar o pulso da comunidade em um resumo semanal coeso, informativo e engaj
 - **Use verbos fiéis ao resultado, inclusive no título e na chamada:** diga "foi aprovada" ou "passou no processo seletivo" (nunca "aprova processo seletivo", "aprovou no processo" nem "Ana aprova Dev Júnior": em título, escreva "Ana é aprovada como Dev Júnior"), "concluiu o deploy" (não "lança") e "deixou o link" (não "link aberto").
 - **A chamada trata de uma só vitória, a principal.** Os demais destaques entram no resumo. Juntar duas histórias numa linha só leva a exageros, como trocar "concluiu o deploy" por "lança".
 - **Títulos e chamadas seguem as mesmas regras.** Eles costumam exagerar porque resumem demais: não escreva "garantido", "garantiu", "conquistou" ou "contratado" para o que foi só proposta, convite ou entrevista. Se a mensagem diz "recebi uma proposta", o título diz "proposta".
-- Não atribua à pessoa causas ou falas que ela não expressou (por exemplo, "foi decisivo" quando a mensagem diz "foi o assunto principal"). Se a mensagem diz "fez diferença", escreva "fez diferença".
+- Não atribua à pessoa causas ou falas que ela não expressou. Para o papel de um projeto ou de uma tecnologia, repita as palavras dela. Errado: "o projeto fez a diferença na entrevista", quando a mensagem diz só que o projeto "foi o assunto principal da entrevista". Certo: "o projeto foi o assunto principal da entrevista".
 - Não generalize sem base: evite "muitos", "vários" e "todos". Se citar quantidade, ela precisa bater com as mensagens.
 - Não cite o nome de quem relatou dificuldade pessoal ou insegurança. Essas mensagens entram só como clima geral, sem identificar o autor.
 - Não descreva "conteúdos em alta" ou eventos que não apareçam nas mensagens.
@@ -32,7 +32,7 @@ Os exemplos abaixo mostram **só o estilo e a estrutura**. Os nomes e os fatos v
 ### Exemplo 1: vitória da semana e entrega de projeto
 
 **Mensagens do lote:**
-- **Mariana Souza** · `#conquistas-e-vagas` · `depoimento`: "Pessoal, passei no processo seletivo para Desenvolvedora Júnior de IA! O projeto do curso de LangChain e OCI que construí no portfólio fez toda a diferença na entrevista técnica."
+- **Mariana Souza** · `#conquistas-e-vagas` · `depoimento`: "Pessoal, passei no processo seletivo para Desenvolvedora Júnior de IA! O projeto do curso de LangChain e OCI que construí no portfólio foi o assunto da entrevista técnica."
 - **Rafael Lima** · `#projetos-alunos` · `entrega_projeto`: "Concluí o deploy do meu assistente inteligente usando Streamlit Cloud e ChromaDB. Deixei o link no repositório do GitHub para quem quiser testar."
 
 **Saída esperada:**
@@ -42,7 +42,7 @@ Os exemplos abaixo mostram **só o estilo e a estrutura**. Os nomes e os fatos v
   "destaque_newsletter_semanal": {
     "secao": "Vitória da Semana",
     "chamada": "Mariana é aprovada em processo seletivo para Desenvolvedora Júnior de IA",
-    "resumo": "Mariana Souza contou que passou no processo seletivo para Desenvolvedora Júnior de IA e disse que o projeto de LangChain e OCI do portfólio fez toda a diferença na entrevista técnica. Também teve destaque a entrega de Rafael Lima, que concluiu o deploy do seu assistente inteligente com Streamlit Cloud e ChromaDB. Quer mostrar o seu projeto? Compartilhe no canal #projetos-alunos."
+    "resumo": "Mariana Souza contou que passou no processo seletivo para Desenvolvedora Júnior de IA e disse que o projeto de LangChain e OCI do portfólio foi o assunto da entrevista técnica. Também teve destaque a entrega de Rafael Lima, que concluiu o deploy do seu assistente inteligente com Streamlit Cloud e ChromaDB. Quer mostrar o seu projeto? Compartilhe no canal #projetos-alunos."
   }
 }
 ```

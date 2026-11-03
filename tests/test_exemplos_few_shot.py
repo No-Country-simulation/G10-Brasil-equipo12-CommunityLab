@@ -3,6 +3,7 @@
 import json
 import re
 import unittest
+from pathlib import Path
 
 from src.schemas import AtivosDistribuicao
 from src.utils.prompt_loader import carregar_guia_prompt
@@ -13,7 +14,9 @@ CAMPO_POR_CANAL = {
     "faq": "sugestao_conteudo_faq",
 }
 # Palavras que inflam conquistas: não podem aparecer em nenhum exemplo
-PALAVRAS_PROIBIDAS = ("garant", "contratad", "conquistou o est")
+# "diferença", "decisiv" e "diferencial": os exemplos não podem plantar frases de causa que o modelo
+# copiaria para outros lotes (a mensagem real só diz, por exemplo, "foi o assunto principal")
+PALAVRAS_PROIBIDAS = ("garant", "contratad", "conquistou o est", "diferença", "decisiv", "diferencial")
 
 
 def _blocos_json(texto):
@@ -62,6 +65,19 @@ class TestExemplosFewShot(unittest.TestCase):
             if faq is not None:
                 self.assertEqual(faq["status"], "encaminhado_para_mentoria")
                 self.assertEqual(set(faq), {"tema", "origem", "status"})
+
+    def test_caso_de_regressao_da_camila_esta_no_caso_de_teste(self):
+        caminho = Path(__file__).resolve().parents[1] / "dados" / "caso_teste_few_shot.json"
+        lote = json.loads(caminho.read_text(encoding="utf-8"))
+        camila = [i for i in lote["interacoes"] if i["id"] == "MSG_T04"]
+        self.assertEqual(len(camila), 1)
+        self.assertIn("assunto principal da entrevista", camila[0]["texto"])
+        self.assertNotIn("diferença", camila[0]["texto"].lower())
+
+    def test_regra_da_newsletter_pede_para_repetir_as_palavras_da_pessoa(self):
+        guia = carregar_guia_prompt("newsletter")
+        self.assertIn("repita as palavras dela", guia)
+        self.assertIn("foi o assunto principal da entrevista", guia)
 
 
 if __name__ == "__main__":

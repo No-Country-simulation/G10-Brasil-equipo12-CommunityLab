@@ -397,7 +397,7 @@ python -m unittest discover -s tests -t . -v
 | `tests/test_ia_service.py` | Com um cliente falso: o system prompt leva os guias e o lembrete final, há nova tentativa com o motivo da recusa e, esgotadas as tentativas, o erro é informado em vez de gerar conteúdo inventado |
 | `tests/test_pipeline_saida.py` | A saída do terminal não quebra com emojis quando é redirecionada (Windows) |
 
-Resultado esperado: `Ran 55 tests ... OK`. Testes que dependem da Groq ou da OCI reais continuam sendo manuais (passos 7 e 8).
+Resultado esperado: `Ran 57 tests ... OK`. Testes que dependem da Groq ou da OCI reais continuam sendo manuais (passos 7 e 8).
 
 ## 🤝 13. Como Contribuir
 
