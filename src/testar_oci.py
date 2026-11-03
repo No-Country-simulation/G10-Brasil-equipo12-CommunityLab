@@ -8,7 +8,7 @@ def testar_upload():
     print("2. Conectando com a Oracle Cloud...")
     cliente = oci.object_storage.ObjectStorageClient(config)
 
-    # ⚠️ Coloque o seu Namespace real da Oracle entre as aspas:
+    # O namespace da conta é descoberto pelo próprio SDK, não precisa preencher à mão:
     namespace = cliente.get_namespace().data
     bucket_name = "communitylab-ativos-marketing"
     nome_arquivo = "teste-conexao.json"
