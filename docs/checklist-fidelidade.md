@@ -5,9 +5,9 @@ Projeto: G10 Brasil · Equipe 12 · CommunityLab
 Este documento registra a conferência completa de fidelidade entre os textos gerados pela LLM (`post_linkedin` e `destaque_newsletter_semanal`) e as mensagens originais de [`dados/dataset_simulado.json`](../dados/dataset_simulado.json), verificando se o modelo inventou **nome**, **cargo**, **empresa**, **número** ou exagerou **fatos** que não estavam no relato original.
 
 > **Como os textos foram gerados:**
-> - **Data e modelo:** Gerados em 29/10/2026 com `openai/gpt-oss-120b` (Groq, `temperatura = 0.2`), **depois** da inclusão das regras de fidelidade e dos exemplos *few-shot* em [`prompts/linkedin.md`](../prompts/linkedin.md), [`prompts/newsletter.md`](../prompts/newsletter.md) e [`prompts/faq.md`](../prompts/faq.md).
-> - **Comando (auditoria por depoimento — Seção 2):** chamada de `processar_lote(sub_lote, salvar_oci=False, pasta_saida=None)` ([`src/pipeline.py`](../src/pipeline.py)) isolando cada um dos 12 depoimentos e o trio de relatos sensíveis para avaliar `post_linkedin` e `destaque_newsletter_semanal` em todos os cenários.
-> - **Comando (lote completo — citado na Seção 3):** `python -m src.pipeline dados/dataset_simulado.json` 
+> - **Data e modelo:** Auditoria individual (Seção 2) gerada em **29/10/2026** e lote completo (citado na Seção 3) gerado em **28/10/2026**, ambos com `openai/gpt-oss-120b` (Groq, `temperatura = 0.2`), **depois** da inclusão dos guias e regras de fidelidade (26/10) e **antes** do merge dos exemplos *few-shot* (30/10) em [`prompts/linkedin.md`](../prompts/linkedin.md), [`prompts/newsletter.md`](../prompts/newsletter.md) e [`prompts/faq.md`](../prompts/faq.md).
+> - **Comando (auditoria por depoimento — Seção 2, em 29/10/2026):** chamada de `processar_lote(sub_lote, salvar_oci=False, pasta_saida=None)` ([`src/pipeline.py`](../src/pipeline.py)) isolando cada um dos 12 depoimentos e o trio de relatos sensíveis para avaliar `post_linkedin` e `destaque_newsletter_semanal` em todos os cenários.
+> - **Comando (lote completo — citado na Seção 3, em 28/10/2026):** `python -m src.pipeline dados/dataset_simulado.json`
 
 ---
 
@@ -63,8 +63,7 @@ Cada ativo gerado passa por 5 verificações baseadas nas regras de [`src/prompt
      - **`MSG_037` (execução individual — LinkedIn):** afirmou que as simulações *"foram fundamentais para avançar"*, quando a autora apenas agradeceu pelas simulações.
      - **`MSG_039` (execução individual — LinkedIn):** traduziu *"my pipeline is finally running"* como *"Pipeline em produção"* no título, inferindo um ambiente de produção que não foi citado.
      - **`MSG_045` (execução individual — Newsletter):** trocou *"Meu gestor pediu para eu ensinar o resto do time"* por *"e agora vai treinar a equipe"*.
-     - **`MSG_001` (execução do lote completo):** enquanto na execução individual da tabela acima (Seção 2) tanto o post quanto a newsletter saíram 100% fiéis (*"foi o assunto principal da entrevista"*), na execução com o lote inteiro a newsletter resumiu esse trecho como *"impulsionada pelo projeto"* e acrescentou *"A comunidade celebrou o sucesso"* .
+     - **`MSG_001` (execução do lote completo em 28/10/2026, antes dos exemplos *few-shot*):** enquanto na execução individual de 29/10 (Seção 2) tanto o post quanto a newsletter saíram 100% fiéis (*"foi o assunto principal da entrevista"*), na execução com o lote inteiro em 28/10 a newsletter resumiu esse trecho como *"impulsionada pelo projeto"* e acrescentou *"A comunidade celebrou o sucesso"*.
 4. **Achados na Limpeza e Pontuação de Relevância:**
-   - **Empate entre aprovação real e 2ª etapa (`MSG_001` vs. `MSG_037`):** A `MSG_037` (*"Ainda não é a vaga"*) atingiu **90 pontos** (empatada em 1º lugar com a `MSG_001`), pois a palavra `"vaga"` soma +15 pontos mesmo quando precedida de negação (*"não é a vaga"*).
-   - **Remoção de duplicatas:** Com a remoção da mensagem vazia (`MSG_017`) e das duplicatas (`MSG_020` e `MSG_035`), o lote passa de 49 para **47 interações**. Ainda assim, a mensagem só com emojis (`MSG_030`: `"🔥🔥🔥👏👏"`) e a mensagem ambígua (`MSG_043`: `"ok"`) continuam passando.
-
+   - **Limitação conhecida (`MSG_001` vs. `MSG_037`):** A `MSG_037` (*"Ainda não é a vaga"*) atinge **90 pontos** (empatada em 1º lugar com a `MSG_001`), pois a pontuação em Python busca a palavra-chave `"vaga"` (+15 pts) sem analisar negação, antes de enviar à LLM. Como ambas entram na amostra enviada ao modelo e a LLM distingue corretamente os fatos, o comportamento é mantido como limitação conhecida do pré-filtro.
+   - **Remoção de vazias e duplicatas:** Com o descarte da mensagem vazia (`MSG_017`) e das duplicatas (`MSG_020` e `MSG_035`), o lote bruto passa de **50 para 47 interações** (eram 49 antes do filtro de duplicatas). Ainda assim, a mensagem só com emojis (`MSG_030`: `"🔥🔥🔥👏👏"`) e a mensagem ambígua (`MSG_043`: `"ok"`) continuam passando.
