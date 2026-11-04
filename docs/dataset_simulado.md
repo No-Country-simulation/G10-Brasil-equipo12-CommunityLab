@@ -39,7 +39,7 @@
 | `id` | Identificador da mensagem (`MSG_001` a `MSG_050`) |
 | `autor` | Nome fictício ou nome de usuário fictício |
 | `canal` | Canal simulado (por exemplo, `#conquistas-e-vagas`) |
-| `tipo` | `depoimento`, `pergunta_tecnica`, `feedback` ou `interacao_geral` |
+| `tipo` | `depoimento`, `pergunta_tecnica`, `feedback`, `interacao_geral` ou `entrega_projeto` (o motor aceita esse quinto tipo, mas este dataset não tem mensagens dele) |
 | `texto` | Conteúdo da mensagem |
 | `cenario` | Campo auxiliar de teste que indica o tipo de situação da mensagem |
 
@@ -47,7 +47,7 @@ Os campos `id` e `cenario` não fazem parte do exemplo de entrada do manual (`au
 
 ## 6. Composição
 
-**Por tipo:** 12 depoimentos, 16 perguntas técnicas, 9 feedbacks e 13 interações gerais.
+**Por tipo:** 12 depoimentos, 16 perguntas técnicas, 9 feedbacks e 13 interações gerais. Nenhuma mensagem é do tipo `entrega_projeto`.
 
 **Por cenário de teste:** 37 mensagens `limpo` e 13 mensagens com situações propositais para testar a limpeza e a geração:
 
