@@ -103,6 +103,22 @@ def _grupo(interacao: dict) -> str:
 PESOS_AMOSTRA = {"relatos": 5, "duvidas": 3, "outros": 2}
 
 
+def _intercalar_outros(fila: list[dict]) -> list[dict]:
+    """
+    Dentro do grupo "outros", alterna feedback e as demais conversas (interacao_geral...),
+    começando pelo feedback. Assim a cota de 2 vagas vira 1 feedback + 1 conversa por regra,
+    e não por sorte da ordem do arquivo (todas as conversas empatam em 10 pontos).
+    Cada subgrupo mantém a ordem de relevância que já tinha.
+    """
+    feedbacks = [i for i in fila if "feedback" in _normalizar(i.get("tipo", "") or "")]
+    conversas = [i for i in fila if i not in feedbacks]
+    resultado = []
+    for f, c in zip(feedbacks, conversas):
+        resultado.extend([f, c])
+    sobra = feedbacks[len(conversas):] + conversas[len(feedbacks):]
+    return resultado + sobra
+
+
 def _cotas(limite: int) -> dict:
     """Divide `limite` vagas entre os grupos, proporcional aos pesos (maiores restos ficam com as sobras)."""
     total_pesos = sum(PESOS_AMOSTRA.values())
@@ -123,7 +139,8 @@ def selecionar_amostra(interacoes: list[dict], limite: int | None = LIMITE_AMOST
     1. Pontua e ordena todas por relevância.
     2. Se o lote cabe no limite (ou limite é None/0), devolve tudo, só ordenado.
     3. Se não cabe, divide as vagas entre relatos, dúvidas e outros conforme PESOS_AMOSTRA
-       (com limite 10: 5, 3 e 2) e pega as melhores de cada grupo. Se um grupo tem menos
+       (com limite 10: 5, 3 e 2) e pega as melhores de cada grupo. No grupo "outros" as
+       vagas são alternadas: 1 feedback, 1 conversa, 1 feedback... Se um grupo tem menos
        mensagens que a sua cota, a sobra vai para os outros, na ordem relatos, dúvidas, outros.
     4. O resultado fica ordenado por relevância. Empates mantêm a ordem original.
 
@@ -136,6 +153,8 @@ def selecionar_amostra(interacoes: list[dict], limite: int | None = LIMITE_AMOST
     filas = {g: [] for g in PESOS_AMOSTRA}
     for interacao in pontuadas:
         filas[_grupo(interacao)].append(interacao)
+
+    filas["outros"] = _intercalar_outros(filas["outros"])
 
     escolhidas = []
     for grupo, cota in _cotas(limite).items():
