@@ -65,6 +65,37 @@ class TestSelecionarAmostra(unittest.TestCase):
         pontos = [i["pontuacao_relevancia"] for i in r]
         self.assertEqual(pontos, sorted(pontos, reverse=True))
 
+    def test_outros_pega_1_feedback_e_1_conversa_mesmo_com_conversas_primeiro(self):
+        # 8 conversas aparecem ANTES dos feedbacks no arquivo e todas empatam em 10 pontos:
+        # sem a regra, as 2 vagas de "outros" iriam as duas para interacao_geral.
+        lote = (
+            [_m(f"R{i}", "depoimento", "Fui contratada") for i in range(6)]
+            + [_m(f"D{i}", "pergunta_tecnica", "Como?") for i in range(4)]
+            + [_m(f"C{i}", "interacao_geral", "Bom dia") for i in range(8)]
+            + [_m(f"F{i}", "feedback", "Gostei") for i in range(5)]
+        )
+        r = selecionar_amostra(lote)
+        outros = sorted(i["id"] for i in r if i["id"][0] in "CF")
+        self.assertEqual(outros, ["C0", "F0"])
+
+    def test_outros_sem_feedback_usa_as_duas_vagas_com_conversas(self):
+        lote = (
+            [_m(f"R{i}", "depoimento", "Fui contratada") for i in range(6)]
+            + [_m(f"D{i}", "pergunta_tecnica", "Como?") for i in range(4)]
+            + [_m(f"C{i}", "interacao_geral", "Bom dia") for i in range(4)]
+        )
+        r = selecionar_amostra(lote)
+        self.assertEqual(sorted(i["id"] for i in r if i["id"][0] == "C"), ["C0", "C1"])
+
+    def test_outros_sem_conversa_usa_as_duas_vagas_com_feedback(self):
+        lote = (
+            [_m(f"R{i}", "depoimento", "Fui contratada") for i in range(6)]
+            + [_m(f"D{i}", "pergunta_tecnica", "Como?") for i in range(4)]
+            + [_m(f"F{i}", "feedback", "Gostei") for i in range(4)]
+        )
+        r = selecionar_amostra(lote)
+        self.assertEqual(sorted(i["id"] for i in r if i["id"][0] == "F"), ["F0", "F1"])
+
     def test_limite_none_ou_zero_manda_tudo(self):
         self.assertEqual(len(selecionar_amostra(_lote_grande(), None)), 30)
         self.assertEqual(len(selecionar_amostra(_lote_grande(), 0)), 30)
