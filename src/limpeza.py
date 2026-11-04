@@ -64,3 +64,23 @@ def limpar_dados_comunidade(dadosbrutos: dict) -> dict:
     dados_tratados["interacoes"] = interacoes_limpas
 
     return dados_tratados
+
+
+AUTOR_ANONIMO = "Participante"
+
+
+def anonimizar_conversas_gerais(interacoes: list[dict]) -> list[dict]:
+    """
+    Troca o autor por "Participante" nas mensagens do tipo interacao_geral.
+
+    Conversa geral não gera nenhum ativo (regras_roteamento.md), então o nome de quem
+    escreveu não precisa chegar à LLM. Isso protege relatos pessoais classificados como
+    conversa geral, sem depender só do prompt. Roda depois da limpeza (que usa o autor para
+    achar duplicatas) e da amostra. Devolve cópias: a lista original não é alterada.
+
+    Limite conhecido: um nome escrito dentro do próprio texto da mensagem não é removido.
+    """
+    return [
+        {**i, "autor": AUTOR_ANONIMO} if (i.get("tipo") or "").strip().casefold() == "interacao_geral" else dict(i)
+        for i in interacoes
+    ]

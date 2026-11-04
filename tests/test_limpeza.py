@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-from src.limpeza import limpar_dados_comunidade
+from src.limpeza import anonimizar_conversas_gerais, limpar_dados_comunidade
 
 RAIZ = Path(__file__).resolve().parents[1]
 
@@ -69,6 +69,35 @@ class TestDuplicatas(unittest.TestCase):
             self.assertIn(mantida, ids)
         for removida in ("MSG_020", "MSG_035"):
             self.assertNotIn(removida, ids)
+
+
+class TestAnonimizarConversasGerais(unittest.TestCase):
+    def test_interacao_geral_vira_participante_e_os_outros_tipos_mantem_o_autor(self):
+        entrada = [
+            _msg("1", autor="Larissa Quintela", tipo="interacao_geral"),
+            _msg("2", autor="Paulo Neves", tipo="depoimento"),
+            _msg("3", autor="Heitor Salgado", tipo="feedback"),
+            _msg("4", autor="Ana Souza", tipo="pergunta_tecnica"),
+        ]
+        autores = {i["id"]: i["autor"] for i in anonimizar_conversas_gerais(entrada)}
+        self.assertEqual(
+            autores,
+            {"1": "Participante", "2": "Paulo Neves", "3": "Heitor Salgado", "4": "Ana Souza"},
+        )
+
+    def test_nao_altera_a_lista_original(self):
+        entrada = [_msg("1", autor="Larissa Quintela", tipo="interacao_geral")]
+        anonimizar_conversas_gerais(entrada)
+        self.assertEqual(entrada[0]["autor"], "Larissa Quintela")
+
+    def test_mantem_os_outros_campos(self):
+        entrada = [_msg("1", autor="Larissa Quintela", canal="#geral", texto="Estou desanimada", tipo="interacao_geral")]
+        r = anonimizar_conversas_gerais(entrada)[0]
+        self.assertEqual((r["id"], r["canal"], r["tipo"], r["texto"]), ("1", "#geral", "interacao_geral", "Estou desanimada"))
+
+    def test_tipo_com_maiuscula_ou_espaco_tambem_e_anonimizado(self):
+        r = anonimizar_conversas_gerais([_msg("1", autor="Larissa Quintela", tipo=" Interacao_Geral ")])
+        self.assertEqual(r[0]["autor"], "Participante")
 
 
 if __name__ == "__main__":

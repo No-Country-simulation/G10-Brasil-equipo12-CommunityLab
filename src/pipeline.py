@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 
 from src.ia_service import ErroServicoLLM, analisar_lote
 from src.ingestao import ler_mensagens_comunidade, validar_lote
-from src.limpeza import limpar_dados_comunidade
+from src.limpeza import anonimizar_conversas_gerais, limpar_dados_comunidade
 from src.relevancia import LIMITE_AMOSTRA_PADRAO, selecionar_amostra
 from src.oracle_storage import BUCKET_PADRAO, montar_caminho, salvar_no_oci
 from src.schemas import ArmazenamentoOci, LoteEntrada, RespostaCommunityLab, montar_resposta
@@ -85,7 +85,10 @@ def processar_lote(
             total_lote,
             len(dados_limpos["interacoes"]),
         )
-    
+
+    # Conversa geral não gera ativo: o nome do autor não precisa chegar à LLM
+    dados_limpos["interacoes"] = anonimizar_conversas_gerais(dados_limpos["interacoes"])
+
     lote_valido = LoteEntrada.model_validate(dados_limpos)
     periodo = lote_valido.periodo_referencia
 

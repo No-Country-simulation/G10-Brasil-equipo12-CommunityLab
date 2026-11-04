@@ -63,5 +63,25 @@ class TestPipelineAmostra(unittest.TestCase):
             processar_lote(_lote(2, 2, 2), pasta_saida=None, cliente_llm=ClienteFalso([json.dumps(ANALISE_VALIDA)]))
 
 
+class TestPipelinePrivacidade(unittest.TestCase):
+    def test_nome_de_quem_escreveu_conversa_geral_nao_chega_a_llm(self):
+        lote = {
+            "origem_comunidade": "Teste",
+            "periodo_referencia": "Semana_Teste",
+            "interacoes": [
+                {"id": "C1", "autor": "Larissa Quintela", "canal": "#geral", "tipo": "interacao_geral",
+                 "texto": "Estou pensando em desistir do curso."},
+                {"id": "R1", "autor": "Paulo Neves", "canal": "#geral", "tipo": "depoimento",
+                 "texto": "Terminei meu primeiro projeto e já está no ar!"},
+            ],
+        }
+        cliente = ClienteFalso([json.dumps(ANALISE_VALIDA)])
+        processar_lote(lote, pasta_saida=None, cliente_llm=cliente)
+        enviado = cliente.chamadas[0]["messages"][1]["content"]
+        self.assertNotIn("Larissa Quintela", enviado)
+        self.assertIn("Participante", enviado)
+        self.assertIn("Paulo Neves", enviado)  # depoimento continua com o autor
+
+
 if __name__ == "__main__":
     unittest.main()
