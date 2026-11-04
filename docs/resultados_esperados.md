@@ -16,7 +16,7 @@ Tabela de validação do comportamento esperado do pipeline para os casos de tes
 | **DEMO_05** | *Mesmo texto da DEMO_02 (repetida)* | `pergunta_tecnica` | Negativo | API Groq, OCI, Autenticação | Nenhum (duplicata) | Não se aplica | Contar uma só vez. Descartada na limpeza (mantém a primeira ocorrência). |
 | **DEMO_06** | *"Gente meu projetooo deu error na execução e nao consig rdodar o script"* | `pergunta_tecnica` | Negativo | Erro de execução, Script | FAQ | Média | Encaminhar para a mentoria. |
 | **DEMO_07** | *"vc6 sabem pq o OCI da erro 500 qd rodo o script??? ... 🛑😭"* | `pergunta_tecnica` | Negativo | OCI, Erro 500, Python | FAQ | Média | Encaminhar para a mentoria de infraestrutura e criar FAQ sobre OCI. |
-| **DEMO_08** | *"Achei legal o encontro de hoje."* | `feedback` | Positivo | Feedback, Eventos | Resumo de satisfação | Baixa | Armazenar nas métricas gerais de engajamento. |
+| **DEMO_08** | *"Achei legal o encontro de hoje."* | `feedback` | Positivo | Feedback, Eventos | Nenhum ativo (só sentimento) | Baixa | Armazenar nas métricas gerais de engajamento. |
 | **DEMO_09** | *"Pessoal, consegui finalizar meu primeiro projeto de análise de dados usando Python e pandas! ..."* | `depoimento` | Positivo | Python, Pandas, Análise de Dados, GitHub | post de LinkedIn | Alta | Destacar no canal de vitórias e sugerir publicação do projeto no LinkedIn. |
 | **DEMO_10** | *"Estou montando um fluxo no LangGraph ... quando o texto contém duas dúvidas diferentes, o fluxo escolhe apenas uma categoria..."* | `pergunta_tecnica` | Negativo | LangGraph, Classificação de Mensagens, Roteamento, Processamento de Texto | FAQ | Média | Encaminhar para a mentoria e criar tópico de FAQ sobre roteamento no LangGraph. |
 
