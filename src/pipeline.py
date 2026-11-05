@@ -24,6 +24,7 @@ from src.ia_service import ErroServicoLLM, analisar_lote
 from src.ingestao import ler_mensagens_comunidade, validar_lote
 from src.limpeza import anonimizar_conversas_gerais, limpar_dados_comunidade
 from src.relevancia import LIMITE_AMOSTRA_PADRAO, selecionar_amostra
+from src.roteamento import aplicar_regras_de_roteamento
 from src.oracle_storage import BUCKET_PADRAO, montar_caminho, salvar_no_oci
 from src.schemas import ArmazenamentoOci, LoteEntrada, RespostaCommunityLab, montar_resposta
 
@@ -93,6 +94,8 @@ def processar_lote(
     periodo = lote_valido.periodo_referencia
 
     analise = analisar_lote(dados_limpos, tentativas=tentativas, cliente=cliente_llm)
+    # Segunda checagem: descarta ativo sem mensagem do tipo certo e nome de autor que não pode ser citado
+    analise = aplicar_regras_de_roteamento(analise, dados_limpos["interacoes"])
 
     oci = ArmazenamentoOci(
         bucket=os.getenv("OCI_BUCKET", BUCKET_PADRAO),
