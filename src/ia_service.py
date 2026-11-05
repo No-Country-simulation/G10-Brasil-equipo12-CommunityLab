@@ -1,10 +1,11 @@
 # src/ia_service.py
 """Chamada à LLM (Groq) com nova tentativa quando a resposta vem fora do formato."""
 import os
+from typing import Optional, Sequence
 
 from dotenv import load_dotenv
 
-from src.prompts import SYSTEM_PROMPT_ANALISE, construir_prompt_usuario
+from src.prompts import construir_prompt_usuario, montar_system_prompt_analise
 from src.schemas import AnaliseLLM
 from src.validacao import ErroAnaliseLLM, validar_analise_llm
 from src.utils.prompt_loader import carregar_guia_prompt
@@ -38,35 +39,37 @@ def _criar_cliente():
     return Groq(api_key=api_key)
 
 
-def analisar_lote(dados_limpos: dict, tentativas: int = 3, cliente=None) -> AnaliseLLM:
-    """Envia o lote limpo à LLM e devolve a análise validada."""
+# Canal de cada ativo: nome do guia em /prompts e título dele no system prompt
+_GUIAS = {
+    "post_linkedin": ("linkedin", "[GUIA LINKEDIN]"),
+    "destaque_newsletter_semanal": ("newsletter", "[GUIA NEWSLETTER]"),
+    "sugestao_conteudo_faq": ("faq", "[GUIA FAQ]"),
+}
+
+
+def montar_system_prompt(ativos: Optional[Sequence[str]] = None) -> str:
+    """System prompt completo: regras gerais, guias de tom só dos ativos pedidos e lembrete final.
+    ativos=None pede os três. Sem nenhum ativo, não há guia: a LLM só devolve sentimento e tópicos."""
+    base = montar_system_prompt_analise(ativos)
+    pedidos = [a for a in _GUIAS if ativos is None or a in set(ativos)]
+
+    # Carrega dinamicamente os guias de tom de voz salvos na pasta /prompts
+    blocos = "".join(f"\n{titulo}\n{carregar_guia_prompt(canal)}\n" for canal, titulo in (_GUIAS[a] for a in pedidos))
+    if not pedidos:
+        return f"\n{base}"  # sem guias, o lembrete sobre eles não tem o que lembrar; valem as REGRAS GERAIS
+    guias = f"\n\n---\nDIRETRIZES DE TOM DE VOZ POR CANAL (USE-AS PARA GERAR OS ATIVOS):\n{blocos}"
+    return f"\n{base}{guias}\n---\n{LEMBRETE_FINAL}\n"
+
+
+def analisar_lote(dados_limpos: dict, tentativas: int = 3, cliente=None, ativos: Optional[Sequence[str]] = None) -> AnaliseLLM:
+    """Envia o lote limpo à LLM e devolve a análise validada.
+
+    ativos: quais ativos pedir (src/roteamento.py -> ativos_com_material). None pede os três.
+    Os que não forem pedidos não entram no prompt e vêm `null` na análise."""
     if cliente is None:
         cliente = _criar_cliente()
 
-    # 1. Carrega dinamicamente os guias de tom de voz salvos na pasta /prompts
-    prompt_linkedin = carregar_guia_prompt("linkedin")
-    prompt_newsletter = carregar_guia_prompt("newsletter")
-    prompt_faq = carregar_guia_prompt("faq")
-
-    # 2. Consolida o system prompt base da aplicação com os guias de canais
-    system_prompt_consolidado = f"""
-{SYSTEM_PROMPT_ANALISE}
-
----
-DIRETRIZES DE TOM DE VOZ POR CANAL (USE-AS PARA GERAR OS ATIVOS):
-
-[GUIA LINKEDIN]
-{prompt_linkedin}
-
-[GUIA NEWSLETTER]
-{prompt_newsletter}
-
-[GUIA FAQ]
-{prompt_faq}
-
----
-{LEMBRETE_FINAL}
-"""
+    system_prompt_consolidado = montar_system_prompt(ativos)
 
     prompt_base = construir_prompt_usuario(dados_limpos)
     ultimo_erro = None

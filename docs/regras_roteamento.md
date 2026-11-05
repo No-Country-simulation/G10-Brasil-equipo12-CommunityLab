@@ -25,9 +25,12 @@ Um ativo só existe se houver pelo menos uma mensagem de um dos tipos marcados. 
 
 ## 3. Como funciona hoje e o que a Sprint 3 acrescenta
 
-**Hoje:** o roteamento acontece **dentro do prompt**. A LLM recebe todas as mensagens da amostra e decide quais ativos preencher, seguindo as regras acima. A pontuação de relevância (0 a 100) só ordena as mensagens e escolhe a amostra (até 10, com cotas de 5 relatos, 3 dúvidas e 2 outras). **Depois** da resposta, uma segunda checagem em código (`src/roteamento.py`, chamada em `src/pipeline.py`) descarta qualquer ativo sem mensagem do tipo certo no lote e qualquer post ou newsletter que cite quem só fez pergunta técnica ou conversa geral (decisões 7 e 8). Cada descarte vai para o log e tem teste automático (`tests/test_roteamento.py`).
+O código roteia em **dois momentos** (`src/roteamento.py`, chamado em `src/pipeline.py`):
 
-**Ainda proposto para a Sprint 3:** o código calcular a rota de cada mensagem pelo tipo **antes** de chamar a LLM, e pedir só os ativos que têm material. Isso ainda não existe: a checagem acima corrige o resultado, mas não evita o pedido à LLM.
+1. **Antes da LLM** (decisão 11). Cada mensagem recebe uma rota pelo tipo (`rota_da_mensagem`). O código descobre quais ativos têm material no lote (`ativos_com_material`) e monta o prompt só com eles. Um ativo sem material não é pedido à LLM e vem `null`. A pontuação de relevância (0 a 100) só ordena as mensagens e escolhe a amostra (até 10, com cotas de 5 relatos, 3 dúvidas e 2 outras).
+2. **Depois da LLM** (decisões 7 e 8). Uma segunda checagem descarta qualquer ativo sem mensagem do tipo certo e qualquer post ou newsletter que cite quem só fez pergunta técnica ou conversa geral. Cada descarte vai para o log.
+
+As duas etapas têm teste automático (`tests/test_ramificacoes.py` e `tests/test_roteamento.py`). O prompt continua com as mesmas regras (fidelidade, privacidade): o código reduz o pedido, mas não substitui o prompt. A LLM ainda decide, por exemplo, se uma mensagem vaga vira ativo (seção 2).
 
 ## 4. Decisões do time (03/11/2026)
 
@@ -79,6 +82,14 @@ Um ativo só existe se houver pelo menos uma mensagem de um dos tipos marcados. 
    - **O que o código faz e não faz:** o código **não verifica** autorização. O contrato (`src/schemas.py`) não tem campo para isso. A conferência é um passo **humano** antes de publicar. O que o código garante é a decisão 7: quem só fez pergunta ou conversa não é citado.
    - **Dados enviados ao provedor de LLM:** o texto da amostra, com os nomes dos autores, é enviado à Groq. Só as mensagens `interacao_geral` seguem com o autor trocado por "Participante". Com dados reais, é preciso definir a base legal, verificar o tratamento pelo provedor e pela OCI e anonimizar o que for possível (ver [dataset_simulado.md](dataset_simulado.md), seção 7).
    - **Sem pontos em aberto:** a autorização é obrigatória para qualquer publicação com nome, seja o primeiro nome ou o nome completo. Por isso a checagem da decisão 7 trata os dois da mesma forma.
+
+11. **Roteamento antes da LLM** (implementado na Sprint 3, em `src/roteamento.py` e `src/prompts.py`). O código lê o tipo das mensagens que sobraram depois da limpeza e da amostra e pede à LLM **só os ativos que têm material**. Como funciona:
+   - **Uma chamada só.** Os guias de tom (`prompts/`), as instruções e o formato de saída entram no prompt apenas para os ativos pedidos. Os outros ativos saem do formato de saída, ficam `null` na resposta e o prompt diz à LLM para não incluí-los. Com os três ativos, o prompt é idêntico ao de antes.
+   - **A LLM ainda é chamada quando o lote só tem conversa geral**, porque o sentimento e os tópicos do resumo vêm dela. Nesse caso nenhum ativo é pedido e o prompt não leva nenhum guia.
+   - **O código não lê o conteúdo.** Ele olha só o tipo (`tipo`). Mensagem vaga ou relato de dificuldade com tipo `depoimento` ou `feedback` continuam dependendo do prompt (seção 2 e decisões 5 e 9).
+   - **Duas camadas.** Se a LLM devolver um ativo que não foi pedido, a checagem da decisão 8 o descarta e registra no log.
+   - Cada ativo sem material é registrado no log (nível informativo), sem nome de pessoa.
+   - **O que não mudou:** a amostra continua sendo de até 10 mensagens, todas enviadas à LLM para o sentimento. O código não envia à LLM só as mensagens de cada ramo.
 
 ### Evolução futura
 

@@ -1,8 +1,13 @@
 # src/roteamento.py
-"""Segunda checagem depois da LLM (docs/regras_roteamento.md, decisões 7 e 8).
+"""Roteamento em código (docs/regras_roteamento.md, seção 1 e decisões 7 e 8).
 
-A rota dos ativos é pelo tipo da mensagem. O prompt já pede isso à LLM, mas a LLM pode errar:
-aqui o código confere a resposta e descarta (deixa `null`) o que não tem mensagem de origem.
+A rota é pelo tipo da mensagem. O código age em dois momentos:
+
+ANTES da LLM: cada mensagem recebe uma rota (`rota_da_mensagem`) e o lote ganha a lista dos
+ativos que têm material (`ativos_com_material`). Só esses ativos são pedidos à LLM.
+
+DEPOIS da LLM (`aplicar_regras_de_roteamento`): o código confere a resposta e descarta
+(deixa `null`) o que não tem mensagem de origem, caso a LLM erre.
 
 1. Cada ativo só existe se o lote tiver uma mensagem do tipo certo:
    post de LinkedIn: depoimento ou entrega_projeto;
@@ -28,6 +33,31 @@ TIPOS_POR_ATIVO = {
     "destaque_newsletter_semanal": ("depoimento", "entrega_projeto", "feedback"),
     "sugestao_conteudo_faq": ("pergunta_tecnica",),
 }
+
+ATIVOS = tuple(TIPOS_POR_ATIVO)  # ordem canônica: post, newsletter, FAQ
+
+
+def rota_da_mensagem(tipo: str) -> tuple:
+    """Ativos que uma mensagem deste tipo pode alimentar. Tipo desconhecido ou conversa geral: nenhum."""
+    tipo = _normalizar(tipo)
+    return tuple(a for a in ATIVOS if tipo in TIPOS_POR_ATIVO[a])
+
+
+def rotear_interacoes(interacoes: list[dict]) -> dict:
+    """Ramificações: para cada ativo, as mensagens do lote que podem alimentá-lo (podem ser nenhuma)."""
+    return {a: [i for i in interacoes if a in rota_da_mensagem(i.get("tipo", ""))] for a in ATIVOS}
+
+
+def ativos_com_material(interacoes: list[dict]) -> tuple:
+    """Ativos que têm pelo menos uma mensagem do tipo certo, na ordem canônica.
+    Os demais não são pedidos à LLM e ficam `null` na resposta."""
+    ramos = rotear_interacoes(interacoes)
+    pedidos = tuple(a for a in ATIVOS if ramos[a])
+    for a in ATIVOS:
+        if a not in pedidos:
+            logger.info("Sem material para '%s' neste lote: o ativo não será pedido à LLM.", a)
+    return pedidos
+
 
 # Quem escreveu um destes tipos pode ser citado em conteúdo público
 TIPOS_QUE_LIBERAM_O_AUTOR = ("depoimento", "entrega_projeto", "feedback")
