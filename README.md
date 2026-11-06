@@ -50,7 +50,10 @@ Requisitos mínimos do desafio:
 | :--- | :--- |
 | Um depoimento ou conquista | **Case de Sucesso:** post de LinkedIn e destaque de newsletter |
 | Uma dúvida técnica | **Dica ou FAQ**, encaminhada para mentoria |
-| Um feedback | Entra nas **métricas gerais** de satisfação |
+| Um feedback | **Destaque de newsletter** |
+| Uma conversa geral | Nenhum ativo: só entra no **sentimento** da comunidade |
+
+As regras completas de qual tipo de mensagem gera qual ativo estão na seção 5 e em [`docs/regras_roteamento.md`](docs/regras_roteamento.md).
 
 ## ⚙️ 5. Arquitetura do Pipeline e Fluxo dos Dados
 
@@ -61,9 +64,11 @@ graph TD
     A["Entrada: lote JSON ou CSV"] --> B["Ingestão: valida o formato (contrato em schemas.py)"]
     B --> C["Limpeza: remove mensagens vazias e duplicadas e padroniza o texto"]
     C --> S["Seleção da amostra: até 10 mensagens, por relevância e tipo"]
-    S --> D["Análise com LLM (Groq): sentimento, tópicos e ativos"]
+    S --> T["Roteamento por tipo: pede à LLM só os ativos que têm material"]
+    T --> D["Análise com LLM (Groq): sentimento, tópicos e ativos"]
     D --> E{"Resposta no formato?"}
-    E -->|Sim| F["Montagem: contagem e bloco do OCI feitos pelo código"]
+    E -->|Sim| K["Checagem do código: descarta ativo sem mensagem do tipo certo e nome protegido"]
+    K --> F["Montagem: contagem e bloco do OCI feitos pelo código"]
     E -->|Não| R{"Restam tentativas? (máximo 3)"}
     R -->|Sim| D
     R -->|Não| X["Erro claro para quem chamou"]
@@ -78,17 +83,33 @@ graph TD
 | :-: | :--- | :--- | :--- | :--- |
 | 1 | Ingestão e validação | Lê o lote (JSON ou CSV) e confere o formato; informa o campo errado | `src/ingestao.py`, `src/schemas.py` | ✅ Pronto |
 | 2 | Limpeza | Remove mensagens vazias e duplicadas, padroniza o texto e preserva o `id` | `src/limpeza.py`, `src/relevancia.py` (pontuação de 0 a 100; em lotes grandes escolhe a amostra enviada à LLM) | ✅ Pronto |
-| 3 | Análise com LLM | Pede à LLM sentimento, tópicos e os ativos, em JSON, com nova tentativa se vier fora do formato | `src/prompts.py`, `src/ia_service.py`, `src/validacao.py`, `src/utils/prompt_loader.py` (guias em `prompts/`, com regras e exemplos few-shot) | ✅ Pronto |
-| 4 | Resumo e roteamento | A LLM decide quais ativos gerar pelas regras do prompt; o código monta a contagem e o bloco do OCI | `src/prompts.py`, `src/schemas.py` (`montar_resposta`) | ✅ Pronto |
+| 3 | Análise com LLM | Pede à LLM sentimento, tópicos e os ativos que têm material, em JSON, com nova tentativa se vier fora do formato | `src/prompts.py`, `src/ia_service.py`, `src/validacao.py`, `src/utils/prompt_loader.py` (guias em `prompts/`, com regras e exemplos few-shot) | ✅ Pronto |
+| 4 | Roteamento e resumo | O código roteia pelo tipo da mensagem: antes da LLM, pede só os ativos que têm material; depois, descarta o ativo sem mensagem do tipo certo e o post ou a newsletter que cita quem só fez pergunta técnica ou conversa geral. Também monta a contagem e o bloco do OCI | `src/roteamento.py`, `src/prompts.py`, `src/schemas.py` (`montar_resposta`) | ✅ Pronto |
 | 5 | Geração de ativos | Gera post de LinkedIn, destaque de newsletter e sugestão de FAQ, cada um com o tom do canal (`null` quando não há material) | Mesma chamada da etapa 3 | ✅ Pronto |
 | 6 | Curadoria e aprovação | Uma pessoa revisa e aprova na interface | Streamlit | 📝 Planejado |
 | 7 | Armazenamento | Salva o pacote final no bucket da OCI | `src/oracle_storage.py`, `src/pipeline.py` (opção `--oci`) | ✅ Ligado ao pipeline e testado com upload real (confirmado no console em 27/10/2026) |
 
 O formato de dados (entrada e saída) está definido em um só lugar, `src/schemas.py`, e todos os módulos usam esses modelos. A resposta da LLM é validada em `src/validacao.py`, **sem valores de segurança falsos**: se a LLM responder fora do formato, o erro é informado em vez de gerar conteúdo inventado com `status: "sucesso"`.
 
-**Guias de tom de voz e exemplos (few-shot):** os arquivos `prompts/linkedin.md`, `prompts/newsletter.md` e `prompts/faq.md` definem o tom de cada canal, as regras de fidelidade (só fatos das mensagens, proposta não é contratação, não atribuir causas que a pessoa não disse, usar os verbos do relato) e exemplos de entrada e saída. O código carrega os três, junta ao prompt do sistema e termina com um lembrete de precedência. Os exemplos mostram só estilo e estrutura: a LLM não deve copiar nomes nem fatos deles.
+**Guias de tom de voz e exemplos (few-shot):** os arquivos `prompts/linkedin.md`, `prompts/newsletter.md` e `prompts/faq.md` definem o tom de cada canal, as regras de fidelidade (só fatos das mensagens, proposta não é contratação, não atribuir causas que a pessoa não disse, usar os verbos do relato) e exemplos de entrada e saída. O código carrega só os guias dos ativos que o lote pode gerar (veja o roteamento abaixo), junta ao prompt do sistema e termina com um lembrete de precedência. Os exemplos mostram só estilo e estrutura: a LLM não deve copiar nomes nem fatos deles.
 
-**Limite de tamanho:** no plano gratuito da Groq, o modelo atual aceita 8.000 tokens por minuto (limite informado pelo erro 413 de 29/10/2026). Como os guias com exemplos ocupam boa parte disso, o pipeline envia à LLM no máximo **10 mensagens**, escolhidas por relevância e tipo (5 relatos, 3 dúvidas e 2 outras). O `total_interacoes_processadas` continua sendo o do lote inteiro, mas o sentimento e os tópicos refletem a amostra. A opção `--limite` muda o valor.
+**Roteamento por tipo de mensagem:** o ativo gerado depende só do **tipo** da mensagem (decisão do time em 03/11/2026). As decisões e os casos especiais estão em [`docs/regras_roteamento.md`](docs/regras_roteamento.md).
+
+| Tipo da mensagem | Post de LinkedIn | Destaque de newsletter | Sugestão de FAQ |
+| :--- | :-: | :-: | :-: |
+| `depoimento` e `entrega_projeto` | ✅ | ✅ | — |
+| `feedback` | — | ✅ | — |
+| `pergunta_tecnica` | — | — | ✅ |
+| `interacao_geral` | — | — | — |
+
+- **Antes da LLM:** o código lê o tipo das mensagens da amostra e pede só os ativos que têm material. O prompt leva só as instruções, o formato de saída e os guias desses ativos, e os demais vêm `null`. Se o lote só tem conversa geral, a LLM ainda é chamada (o sentimento e os tópicos vêm dela), mas nenhum ativo é pedido.
+- **Depois da LLM:** uma segunda checagem em código descarta (deixa `null`) o ativo que a LLM devolveu sem mensagem do tipo certo no lote, e o post ou a newsletter que cita o nome (completo ou o primeiro nome) de quem só fez pergunta técnica ou conversa geral. Todo descarte vai para o log, sem o nome da pessoa. Se dois autores têm o mesmo primeiro nome e um deles tem depoimento, entrega ou feedback, só o nome completo do outro é bloqueado.
+- **A relevância e o sentimento não decidem a rota.** A pontuação só escolhe a amostra. O sentimento só existe depois da LLM e vale para o lote inteiro, por isso aparece no resumo da comunidade e não define o ativo.
+- **Dúvida recorrente:** qualquer `pergunta_tecnica` pode gerar FAQ. O motor ainda não mede recorrência, e isso fica como evolução futura.
+- **Privacidade:** nas mensagens de conversa geral, o autor é trocado por "Participante" antes de a amostra ir à LLM. O nome de uma pessoa em conteúdo público só pode ser usado com a **autorização dela**, para o primeiro nome e para o nome completo. O código **não verifica** autorização: a conferência é feita por uma pessoa na curadoria. Os dados deste repositório são simulados.
+- **Limite:** o código olha só o tipo. Uma mensagem vaga (por exemplo, "Achei legal o encontro de hoje") e um relato de dificuldade marcado como `depoimento` ou `feedback` continuam dependendo das regras do prompt.
+
+**Limite de tamanho:** no plano gratuito da Groq, o modelo atual aceita 8.000 tokens por minuto (limite informado pelo erro 413 de 29/10/2026). Como os guias com exemplos ocupam boa parte disso, o pipeline envia à LLM no máximo **10 mensagens**, escolhidas por relevância e tipo (5 relatos, 3 dúvidas e 2 outras). O `total_interacoes_processadas` continua sendo o do lote inteiro, mas o sentimento e os tópicos refletem a amostra. A opção `--limite` muda o valor. Quando o lote só pode gerar alguns ativos, o prompt também fica menor, porque leva só os guias deles.
 
 **Régua de relevância:** os critérios de Alta, Média e Baixa relevância e o cálculo da pontuação de 0 a 100 estão em [`docs/regua_relevancia.md`](docs/regua_relevancia.md).
 
@@ -119,6 +140,8 @@ Pela linha de comando: `python -m src.pipeline` (veja o guia da seção 12).
 | A LLM responde fora do formato JSON | Valida, tenta de novo até 3 vezes contando à LLM o motivo da recusa e, se continuar falhando, devolve um erro claro. A análise é do lote inteiro, não mensagem a mensagem (✅ implementado) |
 | Chave ou serviço da LLM com problema | Mensagem de erro clara (✅ implementado) |
 | A LLM inventa ou exagera fatos | Regras no prompt: só usar fatos das mensagens, não inflar conquistas (proposta não é contratação) e não citar o autor de relatos de dificuldade pessoal. **Não elimina o risco**: por isso a curadoria humana antes de publicar |
+| A LLM devolve um ativo que não tem mensagem do tipo certo | A segunda checagem descarta o ativo (fica `null`) e registra no log (✅ implementado) |
+| Post ou newsletter citam o nome de quem só fez pergunta técnica ou conversa geral | A segunda checagem descarta o ativo e registra no log, sem o nome (✅ implementado). Relato de dificuldade marcado como `depoimento` ou `feedback` depende só do prompt |
 | Falha ao salvar na OCI | `salvar_no_oci` devolve `status: falha_ao_salvar` e o tipo do erro, sem expor dados da configuração; a análise não se perde (✅ implementado) |
 
 **Fica para depois do MVP:** RAG e embeddings, execução diária automática (cron), Webhook do Discord, geração de imagens e deploy completo.
@@ -232,7 +255,7 @@ A resposta segue o formato do desafio:
 | `total_interacoes_processadas` | O código | Conta as interações do lote inteiro que sobraram depois da limpeza, mesmo quando a LLM analisa só uma amostra |
 | `sentimento_predominante` | A LLM | Um destes: `Altamente Positivo`, `Positivo`, `Neutro`, `Negativo`, `Altamente Negativo` |
 | `topicos_principais` | A LLM | Lista de temas curtos |
-| `post_linkedin`, `destaque_newsletter_semanal`, `sugestao_conteudo_faq` | A LLM | Cada um vem `null` quando o lote não tem material para ele (por exemplo, sem pergunta técnica não há FAQ) |
+| `post_linkedin`, `destaque_newsletter_semanal`, `sugestao_conteudo_faq` | A LLM, pedidos pelo código só se o lote tiver mensagem do tipo certo | Cada um vem `null` quando o lote não tem material para ele (por exemplo, sem pergunta técnica não há FAQ). O código também descarta o que a LLM devolver sem mensagem de origem |
 | `potencial_engajamento` | A LLM | `Alto`, `Médio` ou `Baixo` |
 | `armazenamento_oci` | O código | `pendente_upload` (rodou sem `--oci`: o pacote foi só para `saida/`), `salvo_com_sucesso` ou `falha_ao_salvar` (com `detalhe_erro`) |
 
@@ -393,16 +416,18 @@ python -m unittest discover -s tests -t . -v
 
 | Arquivo | O que confere |
 | :--- | :--- |
-| `tests/test_limpeza.py` | Remove mensagem vazia, padroniza espaços e quebras, descarta duplicata mantendo a primeira (mesmo com diferença de espaço ou maiúscula), não trata como duplicata o mesmo texto de autores ou canais diferentes, mantém a ordem, não altera o lote de entrada e funciona com os dados de demonstração e com o dataset simulado |
+| `tests/test_limpeza.py` | Troca o autor das conversas gerais por "Participante" sem alterar a lista original. Remove mensagem vazia, padroniza espaços e quebras, descarta duplicata mantendo a primeira (mesmo com diferença de espaço ou maiúscula), não trata como duplicata o mesmo texto de autores ou canais diferentes, mantém a ordem, não altera o lote de entrada e funciona com os dados de demonstração e com o dataset simulado |
 | `tests/test_relevancia.py` | Pontuação por tipo e palavras-chave, sem diferença de acento ou maiúscula, sem casar "vaga" dentro de "devagar", teto de 100 e ordem estável |
 | `tests/test_amostra.py` | Seleção da amostra enviada à LLM: limite padrão de 10, cotas de 5 relatos, 3 dúvidas e 2 outras, sobra de grupos pequenos e nenhum tipo de fora |
 | `tests/test_pipeline_amostra.py` | Com um cliente falso: lote grande vai reduzido à LLM, mas o total informado é o do lote inteiro; `--limite` e aviso de amostra |
 | `tests/test_prompt_loader.py` | Os 3 guias de `prompts/` carregam, trazem as regras de fidelidade e nomes de canal inválidos (como `../README`) são recusados |
 | `tests/test_exemplos_few_shot.py` | Os exemplos few-shot dos guias seguem o contrato, não inflam conquistas, têm hashtags só no final e o FAQ não traz solução |
 | `tests/test_ia_service.py` | Com um cliente falso: o system prompt leva os guias e o lembrete final, há nova tentativa com o motivo da recusa e, esgotadas as tentativas, o erro é informado em vez de gerar conteúdo inventado |
+| `tests/test_roteamento.py` | Segunda checagem depois da LLM: descarta o ativo sem mensagem do tipo certo e o post ou a newsletter que cita quem só fez pergunta ou conversa geral (nome completo ou primeiro nome, sem casar parte de outra palavra); não confere a seção da newsletter nem a origem do FAQ; o log não traz nome de pessoa; funciona dentro do pipeline com um cliente falso |
+| `tests/test_ramificacoes.py` | Roteamento antes da LLM: a rota de cada tipo, os ativos com material do lote, o prompt só com os ativos pedidos (instruções, formato de saída e guias) em todas as combinações e o pipeline com um cliente falso (só dúvidas, só conquistas, só feedback, só conversa geral) |
 | `tests/test_pipeline_saida.py` | A saída do terminal não quebra com emojis quando é redirecionada (Windows) |
 
-Resultado esperado: `Ran 57 tests ... OK`. Testes que dependem da Groq ou da OCI reais continuam sendo manuais (passos 7 e 8).
+Resultado esperado: `Ran 120 tests ... OK`. Testes que dependem da Groq ou da OCI reais continuam sendo manuais (passos 7 e 8).
 
 ## 🤝 13. Como Contribuir
 
