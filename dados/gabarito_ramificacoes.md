@@ -9,17 +9,5 @@ A rota é só pelo tipo da mensagem. A relevância (nota de 0 a 100) só escolhe
 | interacao_geral | — | — | — |
 
 Mensagem vazia ou repetida sai na limpeza e não gera nada. Mensagem vaga demais também não gera.
-
-# Por caso de demo
-| Caso | Tipo | Post | Newsletter | FAQ |
-| :--- | :--- | :-: | :-: | :-: |
-| DEMO_01 | depoimento | Sim | Sim | — |
-| DEMO_02 | pergunta_tecnica | — | — | Sim |
-| DEMO_03 | feedback | — | Sim | — |
-| DEMO_04 (vazia) | pergunta_tecnica | — | — | — |
-| DEMO_05 (repetida do DEMO_02) | pergunta_tecnica | — | — | — |
-| DEMO_06 | pergunta_tecnica | — | — | Sim |
-| DEMO_07 | pergunta_tecnica | — | — | Sim |
-| DEMO_08 (vaga) | feedback | — | — | — |
-| DEMO_09 | depoimento | Sim | Sim | — |
-| DEMO_10 | pergunta_tecnica | — | — | Sim |
+## Por caso de demo
+O resultado esperado de cada caso (post, newsletter e FAQ) está em [`docs/resultados_esperados.md`](../docs/resultados_esperados.md). As regras completas e as decisões do time estão em [`docs/regras_roteamento.md`](../docs/regras_roteamento.md).
