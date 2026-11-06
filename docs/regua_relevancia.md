@@ -21,3 +21,10 @@ Soma de três partes, com teto de 100:
 - **Feedbacks com conteúdo** pontuam hoje 10, como uma conversa curta, e caem em Baixa. Se o time quiser que um feedback detalhado conte mais, a pontuação precisa mudar.
 - **O motor ainda não devolve a faixa por mensagem.** A pontuação reordena as mensagens e escolhe a amostra, mas Alta, Média e Baixa não aparecem na resposta.
 - **`potencial_engajamento`** (Alto, Médio ou Baixo) é outra coisa: é uma estimativa da LLM para o post de LinkedIn, e não vem desta régua.
+
+## Limitações conhecidas
+
+- **A negação não é tratada na pontuação.** A palavra-chave soma 15 pontos mesmo depois de "não". No dataset simulado, a `MSG_037` ("Ainda não é a vaga", sobre uma segunda etapa de processo seletivo) soma 90 pontos e empata em 1º lugar com a `MSG_001` (aprovação de fato), porque "vaga" e "processo seletivo" pontuam. Sem a palavra "vaga", ela somaria 75.
+  - **Decisão (Sprint 3): manter assim, sem tratar negação no código.** Motivos: o caso afeta 1 das 47 mensagens do dataset depois da limpeza; a mensagem é um depoimento legítimo e já entra na amostra por mérito; a LLM mantém os fatos corretos (o checklist de fidelidade conferiu que proposta não vira contratação); e uma regra simples de negação em português pode penalizar frases que não negam a palavra-chave. Tratar a negação também tiraria a `MSG_037` da amostra de 10 (entraria a `MSG_021`), o que exigiria refazer a auditoria de fidelidade.
+  - **Quando reconsiderar:** se lotes reais maiores mostrarem relatos melhores ficando de fora da amostra por causa de uma negação. Nesse caso, a melhoria deve vir com teste cobrindo a frase.
+  - Detalhes da conferência: [`checklist-fidelidade.md`](checklist-fidelidade.md).
