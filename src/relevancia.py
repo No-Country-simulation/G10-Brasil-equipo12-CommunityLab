@@ -64,6 +64,29 @@ def calcular_pontuacao_interacao(interacao: dict) -> int:
     return min(pontos, 100)  # Teto máximo de 100 pontos
 
 
+# Cortes da régua (docs/regua_relevancia.md): Alta de 60 a 100, Média de 25 a 59 e Baixa de 0 a 24.
+# Os valores são propostos e podem ser ajustados pelo time: basta mudar estas duas constantes.
+PISO_FAIXA_ALTA = 60
+PISO_FAIXA_MEDIA = 25
+
+
+def faixa_relevancia(pontuacao: int) -> str:
+    """Converte a nota (0 a 100) na faixa da régua: "Alta", "Média" ou "Baixa"."""
+    if pontuacao >= PISO_FAIXA_ALTA:
+        return "Alta"
+    if pontuacao >= PISO_FAIXA_MEDIA:
+        return "Média"
+    return "Baixa"
+
+
+def faixa_da_interacao(interacao: dict) -> str:
+    """Faixa de uma mensagem: calcula a nota e aplica os cortes da régua.
+
+    A faixa NÃO é adicionada à mensagem enviada à LLM: ela gastaria tokens do limite da Groq
+    e a rota dos ativos é pelo tipo da mensagem, não pela relevância."""
+    return faixa_relevancia(calcular_pontuacao_interacao(interacao))
+
+
 def filtrar_e_ordenar_por_relevancia(interacoes: list[dict], limite: int | None = None) -> list[dict]:
     """
     Atribui pontuação a cada interação e ordena da mais relevante para a menos relevante.
