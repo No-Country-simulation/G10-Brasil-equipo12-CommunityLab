@@ -2,15 +2,24 @@
 import json
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock
 
 from src.pipeline import processar_lote
 from tests.test_ia_service import ANALISE_VALIDA, ClienteFalso
 
 
 class ClienteOciComFalha:
-    """Simula um cliente OCI que falha com exceção ao tentar salvar."""
+    """Simula um cliente OCI cujo envio (put_object) falha com exceção."""
+
+    def get_namespace(self):
+        """Retorna uma resposta simulada para a consulta de namespace."""
+        resposta = MagicMock()
+        resposta.data = "namespace_simulado"
+        return resposta
+
     def put_object(self, *args, **kwargs):
-        raise RuntimeError("Erro simulado: 500 Conexão recusada com OCI Object Storage")
+        """Lança erro simulado na operação de upload para o bucket."""
+        raise RuntimeError("Erro simulado: 500 Falha ao salvar objeto no OCI Object Storage")
 
 
 class TestFalhaOci(unittest.TestCase):
@@ -35,7 +44,7 @@ class TestFalhaOci(unittest.TestCase):
         cliente_oci_com_erro = ClienteOciComFalha()
 
         try:
-            # 2. Executa o pipeline com OCI ativado, mas usando o cliente falso que falha
+            # 2. Executa o pipeline com OCI ativado e cliente simulado com falha
             resposta = processar_lote(
                 lote,
                 salvar_oci=True,
@@ -44,7 +53,7 @@ class TestFalhaOci(unittest.TestCase):
                 cliente_oci=cliente_oci_com_erro,
             )
 
-            # 3. Critérios de validação da Bruna:
+            # 3. Validações:
             # a) O pipeline não quebrou e devolveu 'falha_ao_salvar'
             self.assertEqual(resposta.armazenamento_oci.status, "falha_ao_salvar")
 

@@ -72,19 +72,20 @@ Persistência validada no Object Storage da Oracle Cloud no caminho `ativos/2026
 
 ---
 
-## 5. Diagrama de Arquitetura e Fluxo
+## 5. Resiliência e Persistência Local
 
-O fluxo arquitetural reflete o pré/pós-processamento de roteamento, regras de anonimização e persistência assíncrona/fallback no OCI Object Storage conforme o diagrama atualizado no repositório.
+Caso ocorra indisponibilidade ou falha na integração com o OCI Object Storage, o pipeline:
+1. Trata a exceção sem interromper a execução do motor.
+2. Registra o status `"falha_ao_salvar"` no metadado `armazenamento_oci`.
+3. Garante que os dados gerados pela análise da LLM permaneçam íntegros e salvos na cópia local em `saida/`.
 
 ---
 
 ## 📌 Resumo / Checklist de Validação das Entregas
 
-Para conferência rápida dos 4 critérios solicitados pela equipe:
-
-| Item | Solicitação | Status | Onde Conferir |
+| Item | Solicitação | Status | Observação |
 | :--- | :--- | :---: | :--- |
-| **1** | **Saída do terminal com `salvo_com_sucesso`** | ✅ Concluído | Seção 2 deste relatório (JSON completo com flag OCI confirmada). |
-| **2** | **Comparação Bucket OCI vs Cópia Local** | ✅ Concluído | Seção 3 (conteúdo idêntico; cópia local agrega o metadado `armazenamento_oci`). |
-| **3** | **Novo print do Bucket sem dados sensíveis** | ✅ Concluído | Seção 4 (print de 07/11/2026, 19:13 UTC sem namespace/OCID expostos). |
-| **4** | **Diagrama de fluxo atualizado** | ✅ Concluído | Seção 5 e Mermaid/Miro com roteamento e fallback desacoplados. |
+| **1** | **Saída do terminal com `salvo_com_sucesso`** | ✅ Concluído | Seção 2 deste relatório (execução na `main`). |
+| **2** | **Comparação Bucket OCI vs Cópia Local** | ✅ Concluído | Seção 3 (conteúdo idêntico, metadado na cópia local). |
+| **3** | **Novo print do Bucket sem dados sensíveis** | ✅ Concluído | Seção 4 (print de 07/11/2026, 19:13 UTC). |
+| **4** | **Diagrama de fluxo atualizado** | ⏳ Em PR separado | Será atualizado na documentação geral da arquitetura. |
