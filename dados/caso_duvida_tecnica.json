@@ -1,0 +1,13 @@
+{
+  "origem_comunidade": "Discord_Grupo_ONE_G10",
+  "periodo_referencia": "Semana_Teste_Duvida",
+  "interacoes": [
+    {
+      "id": "MSG_002",
+      "autor": "Rafael Tavares",
+      "canal": "#duvidas-langgraph",
+      "tipo": "pergunta_tecnica",
+      "texto": "Alguém sabe como configurar um retry no nó condicional do LangGraph quando a LLM devolve um JSON quebrado? Estou tentando com um router, mas ele só tenta uma vez."
+    }
+  ]
+}

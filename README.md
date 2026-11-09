@@ -186,7 +186,9 @@ O motor categoriza as interações da comunidade em 5 tipos:
 
 - [`dados/mensagens_exemplo.json`](dados/mensagens_exemplo.json): mensagens de exemplo
 - [`dados/dataset_simulado.json`](dados/dataset_simulado.json): 50 mensagens simuladas (veja [`docs/dataset_simulado.md`](docs/dataset_simulado.md))
-- [`dados/caso_proposta_estagio.json`](dados/caso_proposta_estagio.json): lote pequeno com uma proposta de estágio e um freela, sem pergunta técnica
+- [`dados/caso_conquista.json`](dados/caso_conquista.json): exemplo 1 de demonstração, com um depoimento e uma entrega de projeto
+- [`dados/caso_proposta_estagio.json`](dados/caso_proposta_estagio.json): exemplo 2 de demonstração, com uma proposta de estágio e um freela, sem pergunta técnica
+- [`dados/caso_duvida_tecnica.json`](dados/caso_duvida_tecnica.json): exemplo 3 de demonstração, com uma única dúvida técnica
 - [`dados/caso_teste_few_shot.json`](dados/caso_teste_few_shot.json): lote pequeno com mensagens que não estão nos exemplos few-shot, para conferir se a LLM generaliza em vez de copiar
 - [`dados/casos_demo.json`](dados/casos_demo.json): casos de demonstração, incluindo dados com sujeira (mensagem vazia, repetida, com erros de digitação, com ruído e texto curto e ambíguo)
 - [`docs/resultados_esperados.md`](docs/resultados_esperados.md): tabela de resultados esperados dos casos de demonstração
@@ -270,11 +272,11 @@ Três transformações reais, com a mensagem original, a análise e os ativos ge
 
 | # | Entrada | Saída | O que mostra |
 | :-: | :--- | :--- | :--- |
-| 1 | Um depoimento (Mariana) e uma entrega de projeto (Rafael) | Post de LinkedIn e destaque de newsletter | Uma conquista vira dois formatos, cada um com o tom do canal |
-| 2 | Uma proposta de estágio (Gustavo) e um freela fechado (Henrique) | Post de LinkedIn e destaque de newsletter; FAQ `null` | Fidelidade aos fatos (proposta não vira contratação) e ausência de ativo quando não há material |
-| 3 | Uma dúvida técnica (Rafael Tavares) | Sugestão de FAQ encaminhada para a mentoria | Dúvida recorrente vira tópico de FAQ rastreável |
+| 1 | Um depoimento (Mariana) e uma entrega de projeto (Rafael), em `caso_conquista.json` | Post de LinkedIn e destaque de newsletter; FAQ `null` | Uma conquista vira dois formatos, cada um com o tom do canal |
+| 2 | Uma proposta de estágio (Gustavo) e um freela fechado (Henrique), em `caso_proposta_estagio.json` | Post de LinkedIn e destaque de newsletter; FAQ `null` | Fidelidade aos fatos (proposta não vira contratação) e ausência de ativo quando não há material |
+| 3 | Uma dúvida técnica (Rafael Tavares), em `caso_duvida_tecnica.json` | Sugestão de FAQ encaminhada para a mentoria; post e newsletter `null` | Dúvida recorrente vira tópico de FAQ rastreável, sem post nem newsletter |
 
-As saídas são reais e os dados, simulados. A LLM varia entre execuções, por isso a revisão humana antes de publicar faz parte do fluxo.
+As saídas são reais (geradas em 09/11/2026) e os dados, simulados. As três entradas estão congeladas e protegidas por teste (`tests/test_exemplos_demo.py`). A LLM varia entre execuções, por isso a revisão humana antes de publicar faz parte do fluxo.
 
 ## 🖥️ 10. Interface de Curadoria e Validação
 
@@ -383,7 +385,9 @@ Outros usos:
 
 ```bash
 python -m src.pipeline dados/dataset_simulado.json                # outro arquivo (JSON ou CSV)
-python -m src.pipeline dados/caso_proposta_estagio.json           # lote pequeno, sem pergunta técnica
+python -m src.pipeline dados/caso_conquista.json                  # exemplo 1: depoimento e entrega de projeto
+python -m src.pipeline dados/caso_proposta_estagio.json           # exemplo 2: proposta de estágio e freela
+python -m src.pipeline dados/caso_duvida_tecnica.json             # exemplo 3: dúvida técnica
 python -m src.pipeline dados/dataset_simulado.json --periodo Semana_Teste   # troca o período
 python -m src.pipeline dados/dataset_simulado.json --limite 8               # menos mensagens para a LLM (padrão: 10)
 ```
