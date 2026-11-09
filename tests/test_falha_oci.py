@@ -1,5 +1,6 @@
 """Testa a resiliência do pipeline quando o OCI falha."""
 import json
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -39,16 +40,18 @@ class TestFalhaOci(unittest.TestCase):
             ],
         }
 
-        pasta_temporaria = Path("saida_teste_falha")
         cliente_llm = ClienteFalso([json.dumps(ANALISE_VALIDA)])
         cliente_oci_com_erro = ClienteOciComFalha()
 
-        try:
-            # 2. Executa o pipeline com OCI ativado e cliente simulado com falha
+        # 2. Usa TemporaryDirectory conforme sugestão de boas práticas
+        with tempfile.TemporaryDirectory() as pasta_temp:
+            pasta_saida = Path(pasta_temp)
+
+            # Executa o pipeline com OCI ativado e cliente simulado com falha
             resposta = processar_lote(
                 lote,
                 salvar_oci=True,
-                pasta_saida=pasta_temporaria,
+                pasta_saida=pasta_saida,
                 cliente_llm=cliente_llm,
                 cliente_oci=cliente_oci_com_erro,
             )
@@ -57,17 +60,12 @@ class TestFalhaOci(unittest.TestCase):
             # a) O pipeline não quebrou e devolveu 'falha_ao_salvar'
             self.assertEqual(resposta.armazenamento_oci.status, "falha_ao_salvar")
 
-            # b) A cópia local foi gravada com sucesso em disco
-            arquivo_esperado = pasta_temporaria / "2026-semana-teste-falha_pacote-distribuicao.json"
-            self.assertTrue(arquivo_esperado.exists(), "A cópia local deveria existir mesmo com erro no OCI")
+            # b) Valida o detalhe do erro capturado
+            self.assertIn("RuntimeError", resposta.armazenamento_oci.detalhe_erro)
 
-        finally:
-            # Limpeza dos arquivos temporários de teste
-            arquivo_esperado = pasta_temporaria / "2026-semana-teste-falha_pacote-distribuicao.json"
-            if arquivo_esperado.exists():
-                arquivo_esperado.unlink()
-            if pasta_temporaria.exists():
-                pasta_temporaria.rmdir()
+            # c) A cópia local foi gravada com sucesso no diretório temporário
+            arquivo_esperado = pasta_saida / "2026-semana-teste-falha_pacote-distribuicao.json"
+            self.assertTrue(arquivo_esperado.exists(), "A cópia local deveria existir mesmo com erro no OCI")
 
 
 if __name__ == "__main__":
