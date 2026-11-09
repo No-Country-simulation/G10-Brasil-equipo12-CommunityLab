@@ -72,12 +72,11 @@ Persistência validada no Object Storage da Oracle Cloud no caminho `ativos/2026
 
 ---
 
-## 5. Resiliência e Persistência Local
+## 5. Resiliência e Diagrama de Arquitetura
 
-Caso ocorra indisponibilidade ou falha na integração com o OCI Object Storage, o pipeline:
-1. Trata a exceção sem interromper a execução do motor.
-2. Registra o status `"falha_ao_salvar"` no metadado `armazenamento_oci`.
-3. Garante que os dados gerados pela análise da LLM permaneçam íntegros e salvos na cópia local em `saida/`.
+O diagrama abaixo reflete a arquitetura atualizada da `main`, detalhando as etapas de pré/pós-roteamento, privacidade, e o comportamento de resiliência: em caso de falha no OCI Object Storage, o pipeline anota `status: "falha_ao_salvar"` e preserva a análise e a cópia local em `saida/`.
+
+![Diagrama de Arquitetura e Fluxo](./diagrama_arquitetura_pipeline.png)
 
 ---
 
@@ -88,4 +87,4 @@ Caso ocorra indisponibilidade ou falha na integração com o OCI Object Storage,
 | **1** | **Saída do terminal com `salvo_com_sucesso`** | ✅ Concluído | Seção 2 deste relatório (execução na `main`). |
 | **2** | **Comparação Bucket OCI vs Cópia Local** | ✅ Concluído | Seção 3 (conteúdo idêntico, metadado na cópia local). |
 | **3** | **Novo print do Bucket sem dados sensíveis** | ✅ Concluído | Seção 4 (print de 07/11/2026, 19:13 UTC). |
-| **4** | **Diagrama de fluxo atualizado** | ⏳ Em PR separado | Será atualizado na documentação geral da arquitetura. |
+| **4** | **Diagrama de fluxo atualizado** | ✅ Concluído | Seção 5 (diagrama exportado do Miro com fluxo de erro OCI). |
