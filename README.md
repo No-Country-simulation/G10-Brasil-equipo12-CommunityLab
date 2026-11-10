@@ -429,6 +429,20 @@ python -m unittest discover -s tests -t . -v
 
 Resultado esperado: `Ran 120 tests ... OK`. Testes que dependem da Groq ou da OCI reais continuam sendo manuais (passos 7 e 8).
 
+## 🖥️ 10. Interface de Curadoria e Validação
+
+A interface é feita em **Streamlit**. A ideia é mostrar o resumo da comunidade (clima e assuntos), os conteúdos gerados e permitir que uma pessoa revise e aprove antes de publicar.
+
+**Passo 1 (pronto):** carregar as mensagens, gerar o conteúdo e mostrar o resultado.
+
+```bash
+streamlit run interface_streamlit.py
+```
+
+Na própria página, escolha um dos exemplos de demonstração (Conquistas da comunidade, Proposta de estágio e freela, Dúvida técnica) ou envie um `.json` ou `.csv`, e clique em **Gerar conteúdo**. A tela mostra os três conteúdos prontos para revisar (post para o LinkedIn, destaque para a newsletter e pergunta frequente sugerida; o que não tiver material mostra o motivo) e, no fim da página, o resumo da comunidade (mensagens analisadas, clima da comunidade e assuntos da semana). A tela é simples de propósito: não tem barra lateral nem campos técnicos (período, limite de mensagens ou JSON). O período vem do próprio arquivo (no CSV, usa `Semana_Atual`) e o limite é o padrão do motor (10 mensagens). Ela usa a chave da Groq do arquivo `.env`, como a linha de comando, e **não envia nada ao OCI**. A cópia local continua sendo gravada em `saida/`. As cores da marca ficam em `.streamlit/config.toml` (botão azul, fundo branco e caixas cinza-claro) e as etiquetas amarelas, em `interface_streamlit.py`. Para trocar o nome do agente ou colocar um mascote, edite `NOME_AGENTE` em `interface_streamlit.py` e salve a imagem em `assets/mascote.png`. A lógica fica em `src/interface_logica.py` (com testes offline) e a tela, em `interface_streamlit.py`.
+
+🚧 **Passo 2 (em construção, Sprint 4):** editar cada texto e aprovar ou reprovar.
+
 ## 🤝 13. Como Contribuir
 
 - Padrão de mensagens de commit: [`docs/padrao-commits.md`](docs/padrao-commits.md)

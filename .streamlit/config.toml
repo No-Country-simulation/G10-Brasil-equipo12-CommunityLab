@@ -1,0 +1,7 @@
+# Cores da marca: botão azul, fundo branco, caixas cinza-claro e texto preto (o amarelo está nas etiquetas, em interface_streamlit.py).
+# Vale ao abrir a tela na pasta raiz do projeto:  streamlit run interface_streamlit.py
+[theme]
+primaryColor = "#1D4ED8"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F0F0"
+textColor = "#111111"
