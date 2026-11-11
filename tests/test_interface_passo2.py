@@ -13,7 +13,7 @@ AGORA = datetime(2026, 11, 10, 15, 30, 0)
 
 def _aprovar(**extra):
     args = dict(
-        chave="post_linkedin", decisao="aprovado", revisor="Bruna",
+        chave="post_linkedin", decisao="aprovado", revisor="Revisora Teste",
         texto_original={"titulo": "A", "copy": "B"}, texto_final={"titulo": "A", "copy": "B"},
         pessoas=["Ana Teste"], conferiu_fatos=True, conferiu_autorizacao=True, agora=AGORA,
     )
@@ -72,7 +72,7 @@ class TestRegistrarDecisao(unittest.TestCase):
     def test_aprovacao_completa(self):
         r = _aprovar()
         self.assertEqual(r["decisao"], "aprovado")
-        self.assertEqual(r["revisor"], "Bruna")
+        self.assertEqual(r["revisor"], "Revisora Teste")
         self.assertEqual(r["data_hora"], "2026-11-10T15:30:00")
         self.assertFalse(r["editado_pela_pessoa"])
         self.assertEqual(r["pessoas_citadas"], ["Ana Teste"])
@@ -165,7 +165,7 @@ class TestSalvar(_EmPastaTemporaria):
         self.assertEqual(caminho.parent.name, "saida")
         dados = json.loads(caminho.read_text(encoding="utf-8"))
         self.assertEqual(dados["periodo_referencia"], "Semana_Teste")
-        self.assertEqual(dados["decisoes"][0]["revisor"], "Bruna")
+        self.assertEqual(dados["decisoes"][0]["revisor"], "Revisora Teste")
 
     def test_regravar_substitui_o_estado_anterior(self):
         il.salvar_decisoes({"post_linkedin": _aprovar()}, "Semana_Teste")
@@ -191,3 +191,23 @@ class TestPacoteAprovado(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AlturaDoCampoTest(unittest.TestCase):
+    def test_texto_curto_usa_o_minimo(self):
+        from src.interface_logica import altura_do_campo
+        self.assertGreaterEqual(altura_do_campo("Oi", 50), 68)
+
+    def test_texto_maior_fica_mais_alto(self):
+        from src.interface_logica import altura_do_campo
+        curto = altura_do_campo("a" * 50, 50)
+        longo = altura_do_campo("a" * 500, 50)
+        self.assertGreater(longo, curto)
+
+    def test_cada_paragrafo_conta_uma_linha_pelo_menos(self):
+        from src.interface_logica import altura_do_campo
+        self.assertGreater(altura_do_campo("a\n\nb\n\nc\n\nd", 50), altura_do_campo("a b c d", 50))
+
+    def test_respeita_o_maximo(self):
+        from src.interface_logica import altura_do_campo
+        self.assertEqual(altura_do_campo("a" * 100000, 50, maximo=560), 560)

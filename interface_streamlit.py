@@ -1,5 +1,5 @@
 # interface_streamlit.py
-"""Interface de curadoria do CommunityLab (passo 1: gerar o conteúdo; passo 2: editar, aprovar ou reprovar cada texto).
+"""Interface de curadoria da Pauta IA, o agente do projeto CommunityLab (passo 1: gerar o conteúdo; passo 2: editar, aprovar ou reprovar cada texto).
 
 Como abrir (na pasta raiz do projeto, com o ambiente virtual ativo):
     streamlit run interface_streamlit.py
@@ -15,8 +15,11 @@ import streamlit as st
 
 from src.ia_service import ErroServicoLLM
 from src.interface_logica import (
+    altura_do_campo,
     ATIVOS,
     URL_LINKEDIN,
+    anonimizar_pessoas,
+    autores_do_lote,
     ativos_para_exibir,
     campos_editaveis,
     carregar_lote_de_exemplo,
@@ -40,32 +43,47 @@ from src.interface_logica import (
     texto_para_publicar,
 )
 
-# Depois da votação, troque só o nome aqui. Para o mascote, salve a imagem em assets/mascote.png.
-NOME_AGENTE = "CommunityLab"
-MASCOTE = Path("assets/mascote.png")
+# Nome escolhido na votação do time. Para trocar o nome, mude NOME_AGENTE e gere de novo a imagem assets/logo_pauta_ia.png (original do mascote em assets/mascote.svg).
+NOME_AGENTE = "Pauta IA"
+# Caminhos a partir da pasta deste arquivo (funcionam mesmo que o streamlit seja aberto de outra pasta)
+PASTA_ASSETS = Path(__file__).resolve().parent / "assets"
+MASCOTE = PASTA_ASSETS / "mascote.png"
+LOGO = PASTA_ASSETS / "logo_pauta_ia.png"
 
 st.set_page_config(page_title=f"{NOME_AGENTE} · Curadoria", page_icon=str(MASCOTE) if MASCOTE.is_file() else "🧪", layout="wide", initial_sidebar_state="collapsed")
 
-if MASCOTE.is_file():
-    col_mascote, col_titulo = st.columns([1, 8], vertical_alignment="center")
-    col_mascote.image(str(MASCOTE), width=90)
-    col_titulo.title(NOME_AGENTE)
-else:
-    st.title(f"🧪 {NOME_AGENTE}")
-
-st.markdown(f"### {NOME_AGENTE} transforma o que a sua comunidade conta em conteúdo pronto para publicar.")
-st.markdown("Você escolhe as mensagens, o agente entende sozinho o que cada uma pode virar e entrega um post, um destaque de newsletter e uma sugestão de FAQ para você revisar.")
-st.caption("Versão de demonstração, com dados simulados.")
-
-# Etiqueta amarela com texto preto (cores da marca) e largura máxima da página. As demais cores ficam em .streamlit/config.toml.
+# Etiqueta amarela com texto preto (cores da marca), largura máxima da página e topo centralizado. As demais cores ficam em .streamlit/config.toml.
 st.markdown(
     "<style>"
     ".etiqueta{background:#FFD966;color:#111111;font-weight:700;padding:4px 14px;border-radius:999px;display:inline-block;}"
     # Em tela larga, as linhas de texto ficariam compridas demais: limita e centraliza a página
     "[data-testid='stMainBlockContainer'],.block-container{max-width:1500px;margin-left:auto;margin-right:auto;}"
+    ".topo{text-align:center;} .topo h3{font-weight:700;margin:0 0 .6rem 0;} .topo p{max-width:820px;margin:0 auto .6rem auto;text-wrap:balance;}"
+    ".topo .pequeno{font-size:.85rem;color:#6b7280;}"
+    # título só para leitores de tela (o nome visível é a imagem da logo)
+    ".so-leitor{position:absolute;left:-9999px;}"
     "</style>",
     unsafe_allow_html=True,
 )
+
+# Topo centralizado: logo (mascote + nome, o "IA" em azul), chamada e explicação. Só entram no HTML textos fixos do código.
+if LOGO.is_file():
+    _, centro_logo, _ = st.columns([1, 1, 1])
+    centro_logo.image(str(LOGO), width="stretch")
+    st.markdown(f"<h1 class='so-leitor'>{NOME_AGENTE}</h1>", unsafe_allow_html=True)
+else:
+    st.markdown(f"<h1 style='text-align:center'>🧪 {NOME_AGENTE}</h1>", unsafe_allow_html=True)
+
+st.markdown(
+    "<div class='topo'>"
+    f"<h3>A {NOME_AGENTE} transforma o que a sua comunidade conta em conteúdo pronto para publicar.</h3>"
+    f"<p>Escolha as mensagens da comunidade e a {NOME_AGENTE} escreve um post para o LinkedIn, um destaque para a newsletter e uma sugestão de FAQ. "
+    "Você edita, aprova e publica com o seu próprio login: nada vai ao ar sem a sua revisão.</p>"
+    "<p class='pequeno'>Versão de demonstração, com dados simulados.</p>"
+    "</div>",
+    unsafe_allow_html=True,
+)
+st.divider()
 
 
 
@@ -108,6 +126,18 @@ with st.expander("Conferir o que a comunidade escreveu", expanded=False):
     st.caption("Confira se são as mensagens certas e, depois, compare com os textos gerados.")
     st.dataframe(tabela_de_mensagens(lote), width="stretch", hide_index=True)
 
+autores = autores_do_lote(lote)
+with st.expander("Alguém não autorizou a divulgação do nome?", expanded=False):
+    st.caption(
+        "Marque quem não autorizou. Antes de gerar, o nome dessa pessoa é trocado por “uma pessoa da comunidade” "
+        "nas mensagens, e o agente conta a história sem identificá-la. "
+        "Apelidos, cargos e outros detalhes ainda podem identificar alguém: confira o texto mesmo assim."
+    )
+    sem_autorizacao = st.multiselect("Não tenho autorização para divulgar o nome de:", autores, key=f"sem_aut:{identificador}")
+if sem_autorizacao:
+    st.caption("Ao gerar, os nomes marcados serão trocados antes de o texto ir ao agente.")
+
+
 def _limpar_revisao():
     """Novo conteúdo gerado: some com as edições e as decisões do conteúdo anterior."""
     for chave in [k for k in st.session_state if str(k).startswith(("campo:", "conf_"))]:
@@ -118,11 +148,14 @@ def _limpar_revisao():
 if gerar:
     try:
         with st.spinner("Gerando o conteúdo..."):
-            st.session_state["resultado"] = executar(lote)
+            lote_para_gerar, trocas = anonimizar_pessoas(lote, sem_autorizacao)
+            st.session_state["resultado"] = executar(lote_para_gerar)
             st.session_state["resultado_de"] = identificador
+            st.session_state["trocas"] = trocas
             _limpar_revisao()
     except (ValueError, FileNotFoundError, ErroServicoLLM) as erro:
         st.session_state.pop("resultado", None)
+        st.session_state.pop("trocas", None)
         st.error(f"Não consegui gerar o conteúdo.\n\n{erro}")
 
 resultado = st.session_state.get("resultado")
@@ -136,11 +169,25 @@ resumo = resposta["resumo_comunidade"]
 st.divider()
 st.subheader("Conteúdos prontos para revisar")
 st.warning(
-    f"**⚠️ {NOME_AGENTE} é uma IA e pode cometer erros.** Antes de publicar, confira duas coisas:\n\n"
+    f"**⚠️ A {NOME_AGENTE} é uma inteligência artificial e pode cometer erros.** Antes de publicar, confira duas coisas:\n\n"
     "1. **Os fatos**, comparando com o que a comunidade escreveu.\n"
     "2. **A autorização de quem aparece com nome** nos textos.\n\n"
     "O texto também pode mudar a cada vez que você gerar."
 )
+for troca in st.session_state.get("trocas", []):
+    m, c = troca["mensagens"], troca["citacoes"]
+    partes = [f"{m} mensagem dela" if m == 1 else f"{m} mensagens dela"]
+    if c:
+        partes.append(f"{c} citação nas mensagens" if c == 1 else f"{c} citações nas mensagens")
+    aviso = (
+        f"**Nome trocado antes de gerar:** {troca['pessoa']} → “{troca['rotulo']}” ({' e '.join(partes)}). "
+        "Confira mesmo assim se o texto ainda identifica alguém."
+    )
+    if troca["so_nome_completo"]:
+        aviso += " O primeiro nome também é de outra pessoa do lote, então só o nome completo foi trocado."
+    st.info(aviso)
+
+
 def _hora(registro):
     return datetime.fromisoformat(registro["data_hora"]).strftime("%d/%m às %H:%M")
 
@@ -158,6 +205,7 @@ def _confirmar_aprovacao(chave, nome_ativo, original, atuais, pessoas):
         st.info(
             "**Sem a autorização delas?** Feche esta janela e faça uma de duas coisas:\n\n"
             f"- **Edite o texto** e tire o nome, por exemplo trocando por “{EXEMPLO_SEM_NOME}”. Depois, aprove de novo.\n"
+            "- Ou **marque a pessoa** em “Alguém não autorizou a divulgação do nome?” (no começo da página) e gere de novo.\n"
             "- Ou **reprove** o texto, com o motivo “Sem autorização das pessoas citadas”."
         )
     else:
@@ -195,7 +243,7 @@ def _guardar(registro):
         del st.session_state[chave]
 
 
-def _cartao(ativo):
+def _cartao(ativo, caracteres_por_linha):
     """Desenha um conteúdo gerado (post, destaque ou FAQ) dentro de um cartão: editar, aprovar ou reprovar."""
     with st.container(border=True):
         # Etiqueta amarela com texto preto (só o nome fixo do cartão entra no HTML, nunca texto de usuário)
@@ -211,7 +259,8 @@ def _cartao(ativo):
                 campo = campo_do_rotulo[rotulo]
                 chave_campo = f"campo:{chave}:{campo}"
                 st.session_state.setdefault(chave_campo, valor)
-                altura = 260 if campo == "copy" else (130 if campo == "resumo" else 68)
+                # Altura pelo tamanho do texto atual: o quadro mostra tudo, sem cortar o final (quem edita vê a altura se ajustar)
+                altura = altura_do_campo(st.session_state[chave_campo], caracteres_por_linha)
                 st.text_area(rotulo, key=chave_campo, height=altura)
             else:
                 st.markdown(f"**{rotulo}:** {valor}")
@@ -223,7 +272,7 @@ def _cartao(ativo):
         pessoas = pessoas_citadas_no_ativo(atuais, lote)
         st.caption("Pessoas citadas neste texto: " + (", ".join(pessoas) if pessoas else "nenhuma encontrada."))
         if pessoas:
-            st.caption(f"Sem a autorização delas? Troque o nome no texto (por exemplo, por “{EXEMPLO_SEM_NOME}”) ou reprove.")
+            st.caption(f"Sem a autorização delas? Troque o nome no texto (por exemplo, por “{EXEMPLO_SEM_NOME}”), marque quem não autorizou no começo da página e gere de novo, ou reprove.")
 
         decisao = st.session_state["decisoes"].get(chave)
         if decisao and decisao_vale(decisao, atuais):
@@ -261,17 +310,20 @@ def _cartao(ativo):
                 st.markdown(f"- **{m['autor']}** · {m['canal']} · `{m['tipo']}`" + (f" · {m['id']}" if m["id"] else ""))
 
 
-st.text_input("Seu nome (quem está revisando)", key="revisor", placeholder="Ex.: Bruna Brandão")
-st.caption("O nome aparece no registro de cada aprovação ou reprovação. Depois de escrever, aperte **Enter**.")
+st.text_input("Seu nome (quem está revisando)", key="revisor", placeholder="Ex.: Maria Silva")
+st.caption(
+    "O nome é **declarado por você, sem login**: nesta versão de demonstração a tela não confirma quem é a pessoa. "
+    "Ele aparece no registro de cada aprovação ou reprovação. Depois de escrever, aperte **Enter**."
+)
 
 # O post (o mais comprido) fica à esquerda; o destaque da newsletter e a FAQ ficam empilhados à direita
 post, destaque, faq = ativos_para_exibir(resposta)
 coluna_post, coluna_outros = st.columns([3, 2])
 with coluna_post:
-    _cartao(post)
+    _cartao(post, caracteres_por_linha=95)
 with coluna_outros:
-    _cartao(destaque)
-    _cartao(faq)
+    _cartao(destaque, caracteres_por_linha=48)
+    _cartao(faq, caracteres_por_linha=48)
 
 # Quantos textos já foram revisados e o arquivo para baixar
 st.divider()
@@ -290,14 +342,14 @@ aprovados_agora = [d for d in validas.values() if d["decisao"] == "aprovado"]
 if aprovados_agora:
     st.markdown("#### Prontos para publicar")
     st.caption(
-        "Copie o texto (ícone no canto do quadro) e cole onde for publicar. "
-        "Quem publica entra com o próprio login: o CommunityLab não publica nada sozinho."
+        "**1. Copie** o texto (ícone no canto do quadro). **2. Abra** o LinkedIn e **cole**. "
+        f"Quem publica entra com o próprio login: a {NOME_AGENTE} não publica nada sozinha."
     )
     for d in aprovados_agora:
         st.markdown(f"**{ATIVOS[d['ativo']][0]}**")
         st.code(texto_para_publicar(d["ativo"], d["texto_final"]), language=None, wrap_lines=True)
         if d["ativo"] == "post_linkedin":
-            st.link_button("Abrir o LinkedIn", URL_LINKEDIN)
+            st.link_button("Abrir o LinkedIn (depois, cole o texto)", URL_LINKEDIN)
 
 with st.expander("Para o time técnico"):
     if validas:
