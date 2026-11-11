@@ -8,6 +8,8 @@ A interface NUNCA envia nada ao OCI: `executar` chama o pipeline com salvar_oci=
 """
 import json
 import logging
+import re
+import unicodedata
 import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -18,7 +20,7 @@ from src.ingestao import ler_mensagens_comunidade, validar_lote
 from src.limpeza import AUTOR_ANONIMO, limpar_dados_comunidade
 from src.pipeline import caminho_local, processar_lote
 from src.relevancia import LIMITE_AMOSTRA_PADRAO, selecionar_amostra
-from src.roteamento import _cita, _normalizar, _primeiro_nome, rotear_interacoes
+from src.roteamento import TIPOS_QUE_LIBERAM_O_AUTOR, _cita, _normalizar, _primeiro_nome, rotear_interacoes
 
 PASTA_DADOS = Path("dados")
 EXTENSOES_ACEITAS = (".json", ".csv")
@@ -387,3 +389,114 @@ def texto_para_publicar(chave: str, texto_final: dict) -> str:
     if chave == "sugestao_conteudo_faq":
         return texto_final.get("tema", "").strip()
     raise ValueError(f"Ativo desconhecido: {chave!r}.")
+
+
+# ------------------------------------------------------------------ Quem não autorizou o nome
+# Antes de o lote ir à LLM, o nome de quem não autorizou é trocado por uma expressão neutra: a história
+# continua, mas o nome não chega ao agente. Isto NÃO verifica nada: apelido, nome escrito de outro jeito
+# ou contexto que identifica a pessoa podem passar, por isso a revisão humana continua obrigatória.
+ROTULOS_ORDINAIS = (
+    "uma pessoa da comunidade",
+    "outra pessoa da comunidade",
+    "uma terceira pessoa da comunidade",
+    "uma quarta pessoa da comunidade",
+    "uma quinta pessoa da comunidade",
+)
+ROTULO_GENERICO = ROTULOS_ORDINAIS[0]
+
+
+def autores_do_lote(lote: dict) -> list:
+    """Autores do lote, sem repetir e na ordem em que aparecem (sem 'Participante' nem vazios)."""
+    autores = []
+    for interacao in lote.get("interacoes", []):
+        autor = (interacao.get("autor") or "").strip()
+        if autor and autor != AUTOR_ANONIMO and autor not in autores:
+            autores.append(autor)
+    return autores
+
+
+def _normalizar_alinhado(texto: str) -> str:
+    """Sem acento e em minúsculas, com o MESMO tamanho do original (cada posição corresponde à do texto)."""
+    saida = []
+    for c in texto:
+        base = "".join(x for x in unicodedata.normalize("NFKD", c) if not unicodedata.combining(x)).lower()
+        saida.append(base if len(base) == 1 else c.lower() if len(c.lower()) == 1 else c)
+    return "".join(saida)
+
+
+def _trocar_nome(texto: str, nome: str, rotulo: str) -> tuple:
+    """Troca cada aparição do nome (palavra inteira, sem importar acento ou maiúscula). Devolve (texto, quantas trocas)."""
+    alvo = _normalizar_alinhado(nome)
+    if not alvo:
+        return texto, 0
+    base = _normalizar_alinhado(texto)
+    trocas = list(re.finditer(r"(?<!\w)" + re.escape(alvo) + r"(?!\w)", base))
+    for m in reversed(trocas):
+        antes = texto[:m.start()].rstrip(" ")
+        comeco_de_frase = not antes or antes[-1] in ".!?\n:"
+        novo = rotulo[:1].upper() + rotulo[1:] if comeco_de_frase else rotulo
+        texto = texto[:m.start()] + novo + texto[m.end():]
+    return texto, len(trocas)
+
+
+def anonimizar_pessoas(lote: dict, nomes: list) -> tuple:
+    """Devolve (lote novo, relatório) com o nome de quem não autorizou trocado antes de ir à LLM.
+
+    - Quem tem depoimento, entrega ou feedback vira "uma pessoa da comunidade" (e "outra", "uma terceira"...,
+      para as histórias não se misturarem). Quem só fez pergunta ou conversa geral vira "Participante", o rótulo
+      que o motor já ignora na checagem de nomes protegidos.
+    - O nome completo é trocado em todas as mensagens. O primeiro nome também, a menos que outra pessoa do
+      lote (que autorizou) tenha o mesmo primeiro nome: nesse caso só o nome completo é trocado.
+    - O lote recebido não é alterado.
+    """
+    marcados = [n for n in autores_do_lote(lote) if n in set(nomes)]
+    if not marcados:
+        return lote, []
+
+    tipos = {}
+    for i in lote.get("interacoes", []):
+        tipos.setdefault((i.get("autor") or "").strip(), set()).add(_normalizar(i.get("tipo", "")))
+    liberadas = [n for n in marcados if tipos.get(n, set()) & set(TIPOS_QUE_LIBERAM_O_AUTOR)]
+    rotulo_de = {}
+    for n in marcados:
+        if n in liberadas:
+            ordem = liberadas.index(n)
+            rotulo_de[n] = ROTULOS_ORDINAIS[ordem] if ordem < len(ROTULOS_ORDINAIS) else f"a pessoa {ordem + 1} da comunidade"
+        else:
+            rotulo_de[n] = ROTULO_GENERICO
+
+    primeiros_de_quem_autorizou = {_primeiro_nome(a) for a in autores_do_lote(lote) if a not in marcados} - {None}
+    interacoes = [dict(i) for i in lote["interacoes"]]
+    relatorio = []
+    for nome in marcados:
+        rotulo = rotulo_de[nome]
+        primeiro = _primeiro_nome(nome)
+        trocar_primeiro = bool(primeiro) and primeiro not in primeiros_de_quem_autorizou
+        citacoes = 0
+        mensagens = 0
+        for i in interacoes:
+            if (i.get("autor") or "").strip() == nome:
+                i["autor"] = rotulo if nome in liberadas else AUTOR_ANONIMO
+                mensagens += 1
+            texto, n = _trocar_nome(i.get("texto", ""), nome, rotulo)
+            if trocar_primeiro:
+                texto, n2 = _trocar_nome(texto, primeiro, rotulo)
+                n += n2
+            i["texto"] = texto
+            citacoes += n
+        relatorio.append({
+            "pessoa": nome,
+            "rotulo": rotulo,
+            "mensagens": mensagens,
+            "citacoes": citacoes,
+            "so_nome_completo": not trocar_primeiro and bool(primeiro),
+        })
+    return {**lote, "interacoes": interacoes}, relatorio
+
+
+def altura_do_campo(texto, caracteres_por_linha, minimo=68, maximo=560):
+    """Altura (em pixels) para o quadro de texto mostrar o texto inteiro, sem cortar e sem sobrar muito espaço.
+
+    É uma estimativa: conta as linhas de cada parágrafo, supondo `caracteres_por_linha` por linha."""
+    linhas = sum(max(1, -(-len(parte) // caracteres_por_linha)) for parte in str(texto).split("\n"))
+    return max(minimo, min(maximo, 44 + 25 * linhas))
