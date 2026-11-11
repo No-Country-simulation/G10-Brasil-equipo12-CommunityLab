@@ -74,7 +74,7 @@ graph TD
     R -->|Não| X["Erro claro para quem chamou"]
     F --> G["Cópia local em saida/"]
     F --> H["OCI Object Storage (opção --oci)"]
-    F -.-> I["Curadoria e aprovação (Streamlit, planejado)"]
+    F -.-> I["Curadoria e aprovação (Streamlit)"]
 ```
 
 ### Etapas e situação atual
@@ -86,7 +86,7 @@ graph TD
 | 3 | Análise com LLM | Pede à LLM sentimento, tópicos e os ativos que têm material, em JSON, com nova tentativa se vier fora do formato | `src/prompts.py`, `src/ia_service.py`, `src/validacao.py`, `src/utils/prompt_loader.py` (guias em `prompts/`, com regras e exemplos few-shot) | ✅ Pronto |
 | 4 | Roteamento e resumo | O código roteia pelo tipo da mensagem: antes da LLM, pede só os ativos que têm material; depois, descarta o ativo sem mensagem do tipo certo e o post ou a newsletter que cita quem só fez pergunta técnica ou conversa geral. Também monta a contagem e o bloco do OCI | `src/roteamento.py`, `src/prompts.py`, `src/schemas.py` (`montar_resposta`) | ✅ Pronto |
 | 5 | Geração de ativos | Gera post de LinkedIn, destaque de newsletter e sugestão de FAQ, cada um com o tom do canal (`null` quando não há material) | Mesma chamada da etapa 3 | ✅ Pronto |
-| 6 | Curadoria e aprovação | Uma pessoa revisa e aprova na interface | Streamlit | 📝 Planejado |
+| 6 | Curadoria e aprovação | Uma pessoa edita, aprova ou reprova cada texto na interface | `interface_streamlit.py`, `src/interface_logica.py` | ✅ Pronto (a decisão fica salva em `saida/`; não envia nada ao OCI) |
 | 7 | Armazenamento | Salva o pacote final no bucket da OCI | `src/oracle_storage.py`, `src/pipeline.py` (opção `--oci`) | ✅ Ligado ao pipeline e testado com upload real (confirmado no console em 27/10/2026) |
 
 O formato de dados (entrada e saída) está definido em um só lugar, `src/schemas.py`, e todos os módulos usam esses modelos. A resposta da LLM é validada em `src/validacao.py`, **sem valores de segurança falsos**: se a LLM responder fora do formato, o erro é informado em vez de gerar conteúdo inventado com `status: "sucesso"`.
@@ -160,7 +160,7 @@ Pela linha de comando: `python -m src.pipeline` (veja o guia da seção 12).
 | Modelo de IA | `openai/gpt-oss-120b` | Em uso no pipeline |
 | Provedor do modelo | Groq (biblioteca `groq`) | Em uso no pipeline |
 | Variáveis de ambiente | `python-dotenv` | Em uso |
-| Interface de curadoria | Streamlit | Decidido, ainda não implementado |
+| Interface de curadoria | Streamlit | Implementada (passos 1 e 2, seção 10) |
 | Armazenamento | OCI Object Storage (camada Always Free), via SDK Python `oci` | Ligado ao pipeline (opção `--oci`) e testado com upload real |
 | Contrato de dados | Pydantic (`src/schemas.py`) | Em uso |
 | Dependências | `requirements.txt` (`groq`, `python-dotenv`, `oci`, `pydantic`) | Em uso |
@@ -280,9 +280,27 @@ As saídas são reais (geradas em 09/11/2026) e os dados, simulados. As três en
 
 ## 🖥️ 10. Interface de Curadoria e Validação
 
-A interface será feita em **Streamlit**. A ideia é mostrar o resumo da comunidade (sentimento e tópicos), os conteúdos gerados e permitir que uma pessoa revise e aprove antes de publicar.
+A interface é feita em **Streamlit**. A ideia é mostrar o resumo da comunidade (clima e assuntos), os conteúdos gerados e permitir que uma pessoa revise e aprove antes de publicar.
 
-🚧 em construção (previsto para a Sprint 4)
+**Passo 1 (pronto):** carregar as mensagens, gerar o conteúdo e mostrar o resultado.
+
+```bash
+streamlit run interface_streamlit.py
+```
+
+Na própria página, escolha um dos exemplos de demonstração (Conquistas da comunidade, Proposta de estágio e freela, Dúvida técnica) ou envie um `.json` ou `.csv`, e clique em **Gerar conteúdo**. A tela mostra os três conteúdos prontos para revisar (post para o LinkedIn, destaque para a newsletter e pergunta frequente sugerida; o que não tiver material mostra o motivo) e, no fim da página, o resumo da comunidade (mensagens analisadas, clima da comunidade e assuntos da semana). A tela é simples de propósito: não tem barra lateral nem campos técnicos (período, limite de mensagens ou JSON). O período vem do próprio arquivo (no CSV, usa `Semana_Atual`) e o limite é o padrão do motor (10 mensagens). Ela usa a chave da Groq do arquivo `.env`, como a linha de comando, e **não envia nada ao OCI**. A cópia local continua sendo gravada em `saida/`. As cores da marca ficam em `.streamlit/config.toml` (botão azul, fundo branco e caixas cinza-claro) e as etiquetas amarelas, em `interface_streamlit.py`. Para trocar o nome do agente ou colocar um mascote, edite `NOME_AGENTE` em `interface_streamlit.py` e salve a imagem em `assets/mascote.png`. A lógica fica em `src/interface_logica.py` (com testes offline) e a tela, em `interface_streamlit.py`.
+
+**Passo 2 (pronto):** editar, aprovar ou reprovar cada texto.
+
+- Antes de decidir, a pessoa escreve o **próprio nome** no topo da revisão. Sem nome, os botões ficam desligados.
+- Os textos (título e texto do post, chamada e resumo da newsletter, tema e origem da FAQ) podem ser corrigidos na própria tela. Se a pessoa mudar um texto **depois** de aprovar, a aprovação deixa de valer e é preciso aprovar de novo.
+- **Aprovar** abre uma janela com as pessoas citadas no texto e duas confirmações obrigatórias: que os fatos foram conferidos com as mensagens e que há **autorização** de quem aparece com nome. A lista de pessoas é só um auxílio: o código não verifica autorização (ver `docs/regras_roteamento.md`, decisão 10).
+- **Reprovar** aceita um motivo opcional, com motivos prontos (por exemplo, “Sem autorização das pessoas citadas”). Sem a autorização de quem aparece com nome, a tela orienta a trocar o nome no texto (por exemplo, por “uma aluna da nossa comunidade”) ou reprovar.
+- A decisão de cada texto é gravada em `saida/<período>_curadoria.json` (pasta ignorada pelo Git), com o texto original, o texto final, quem revisou, quando e as confirmações. O pacote gerado pelo motor **não é alterado** e **nada é enviado ao OCI**.
+- Cada texto aprovado aparece em **Prontos para publicar**, com um quadro para copiar e colar (o post tem também o botão **Abrir o LinkedIn**, que abre o feed; a pessoa entra com o **próprio login** e publica). O CommunityLab **não publica nada sozinho**, para manter a última conferência humana. O LinkedIn não aceita, de forma confiável, texto preenchido pelo endereço, por isso o texto é colado.
+- Na área **Para o time técnico**, o botão **Baixar os textos aprovados** gera um `.json` só com o que foi aprovado.
+
+A lógica fica em `src/interface_logica.py` e é testada em `tests/test_interface_passo2.py`.
 
 ## ☁️ 11. Armazenamento na Nuvem (Oracle Cloud - OCI)
 
@@ -324,7 +342,7 @@ communitylab-ativos-marketing/   (bucket)
 
 ## 🚀 12. Guia Passo a Passo de Implantação
 
-Este guia cobre o pipeline completo: leitura, limpeza, análise com a LLM, montagem da resposta e envio opcional para a OCI. A interface (Streamlit) será acrescentada quando estiver pronta.
+Este guia cobre o pipeline completo: leitura, limpeza, análise com a LLM, montagem da resposta e envio opcional para a OCI. A interface (Streamlit) está descrita na seção 10.
 
 **1. Pré-requisitos**
 
@@ -431,21 +449,7 @@ python -m unittest discover -s tests -t . -v
 | `tests/test_ramificacoes.py` | Roteamento antes da LLM: a rota de cada tipo, os ativos com material do lote, o prompt só com os ativos pedidos (instruções, formato de saída e guias) em todas as combinações e o pipeline com um cliente falso (só dúvidas, só conquistas, só feedback, só conversa geral) |
 | `tests/test_pipeline_saida.py` | A saída do terminal não quebra com emojis quando é redirecionada (Windows) |
 
-Resultado esperado: `Ran 120 tests ... OK`. Testes que dependem da Groq ou da OCI reais continuam sendo manuais (passos 7 e 8).
-
-## 🖥️ 10. Interface de Curadoria e Validação
-
-A interface é feita em **Streamlit**. A ideia é mostrar o resumo da comunidade (clima e assuntos), os conteúdos gerados e permitir que uma pessoa revise e aprove antes de publicar.
-
-**Passo 1 (pronto):** carregar as mensagens, gerar o conteúdo e mostrar o resultado.
-
-```bash
-streamlit run interface_streamlit.py
-```
-
-Na própria página, escolha um dos exemplos de demonstração (Conquistas da comunidade, Proposta de estágio e freela, Dúvida técnica) ou envie um `.json` ou `.csv`, e clique em **Gerar conteúdo**. A tela mostra os três conteúdos prontos para revisar (post para o LinkedIn, destaque para a newsletter e pergunta frequente sugerida; o que não tiver material mostra o motivo) e, no fim da página, o resumo da comunidade (mensagens analisadas, clima da comunidade e assuntos da semana). A tela é simples de propósito: não tem barra lateral nem campos técnicos (período, limite de mensagens ou JSON). O período vem do próprio arquivo (no CSV, usa `Semana_Atual`) e o limite é o padrão do motor (10 mensagens). Ela usa a chave da Groq do arquivo `.env`, como a linha de comando, e **não envia nada ao OCI**. A cópia local continua sendo gravada em `saida/`. As cores da marca ficam em `.streamlit/config.toml` (botão azul, fundo branco e caixas cinza-claro) e as etiquetas amarelas, em `interface_streamlit.py`. Para trocar o nome do agente ou colocar um mascote, edite `NOME_AGENTE` em `interface_streamlit.py` e salve a imagem em `assets/mascote.png`. A lógica fica em `src/interface_logica.py` (com testes offline) e a tela, em `interface_streamlit.py`.
-
-🚧 **Passo 2 (em construção, Sprint 4):** editar cada texto e aprovar ou reprovar.
+Resultado esperado: `Ran N tests ... OK` (N cresce a cada sprint; o que importa é terminar com `OK`). Testes que dependem da Groq ou da OCI reais continuam sendo manuais (passos 7 e 8).
 
 ## 🤝 13. Como Contribuir
 
