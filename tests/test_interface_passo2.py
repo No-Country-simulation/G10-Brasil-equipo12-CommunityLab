@@ -211,3 +211,11 @@ class AlturaDoCampoTest(unittest.TestCase):
     def test_respeita_o_maximo(self):
         from src.interface_logica import altura_do_campo
         self.assertEqual(altura_do_campo("a" * 100000, 50, maximo=560), 560)
+
+
+class OrientacaoSemNomeTest(unittest.TestCase):
+    def test_frase_sugerida_nao_tem_marca_de_genero(self):
+        from src.interface_logica import EXEMPLO_SEM_NOME
+        self.assertEqual(EXEMPLO_SEM_NOME, "uma pessoa da comunidade")
+        for marcada in ("aluna", "aluno"):
+            self.assertNotIn(marcada, EXEMPLO_SEM_NOME)
