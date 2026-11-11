@@ -19,7 +19,7 @@ Um ativo só existe se houver pelo menos uma mensagem de um dos tipos marcados. 
 ## 2. Casos especiais
 
 - **Relato de dificuldade pessoal** (desânimo, insegurança). Serve só para o sentimento. O nome do autor nunca aparece no post nem na newsletter, e a dúvida técnica, se houver, vira um tema de FAQ anônimo. No dataset de 50, são `MSG_011` e `MSG_049` (tipo `interacao_geral`) e `MSG_028` (tipo `pergunta_tecnica`): **o tipo sozinho não separa esses casos**.
-- **Mensagem vaga ou curta demais** (por exemplo, "Achei legal o encontro de hoje."): não vira ativo. O guia do FAQ já pede `null` nesse caso.
+- **Mensagem vaga ou curta demais** (por exemplo, "Achei legal o encontro de hoje." ou "Gente meu projeto deu error na execução e não consigo rodar o script"): não deveria virar ativo, mas **quem evita isso é o prompt, não o código**. O código só confere o tipo (decisão 11). O guia do FAQ pede apenas "só se houver pelo menos uma `pergunta_tecnica`"; o que manda devolver `null` é a regra geral do prompt ("se não houver material para um ativo, use null nele; não preencha só para completar"). Decisões 2 (`DEMO_08`) e 12 (`DEMO_06`).
 - **Mensagem vazia ou repetida:** removida na limpeza, antes do roteamento.
 - **Conquista que não aconteceu ainda** (proposta, segunda etapa de seleção): pode gerar ativo, mas sem aumentar o tamanho da conquista (regra 6 do prompt).
 
@@ -86,10 +86,17 @@ As duas etapas têm teste automático (`tests/test_ramificacoes.py` e `tests/tes
 11. **Roteamento antes da LLM** (implementado na Sprint 3, em `src/roteamento.py` e `src/prompts.py`). O código lê o tipo das mensagens que sobraram depois da limpeza e da amostra e pede à LLM **só os ativos que têm material**. Como funciona:
    - **Uma chamada só.** Os guias de tom (`prompts/`), as instruções e o formato de saída entram no prompt apenas para os ativos pedidos. Os outros ativos saem do formato de saída, ficam `null` na resposta e o prompt diz à LLM para não incluí-los. Com os três ativos, o prompt é idêntico ao de antes.
    - **A LLM ainda é chamada quando o lote só tem conversa geral**, porque o sentimento e os tópicos do resumo vêm dela. Nesse caso nenhum ativo é pedido e o prompt não leva nenhum guia.
-   - **O código não lê o conteúdo.** Ele olha só o tipo (`tipo`). Mensagem vaga ou relato de dificuldade com tipo `depoimento` ou `feedback` continuam dependendo do prompt (seção 2 e decisões 5 e 9).
+   - **O código não lê o conteúdo.** Ele olha só o tipo (`tipo`). Mensagem vaga ou relato de dificuldade com tipo `depoimento` ou `feedback` continuam dependendo do prompt (seção 2 e decisões 5, 9 e 12).
    - **Duas camadas.** Se a LLM devolver um ativo que não foi pedido, a checagem da decisão 8 o descarta e registra no log.
    - Cada ativo sem material é registrado no log (nível informativo), sem nome de pessoa.
    - **O que não mudou:** a amostra continua sendo de até 10 mensagens, todas enviadas à LLM para o sentimento. O código não envia à LLM só as mensagens de cada ramo.
+
+12. **`DEMO_06` (pergunta técnica vaga): sem FAQ é o comportamento esperado** (registrada em 09/11/2026, cartão da Sprint 4; segue a lógica da decisão 2, que já tratou o `DEMO_08` como "nenhum ativo").
+   - **Decisão:** o gabarito do `DEMO_06` ("Gente meu projetooo deu error na execução e nao consig rdodar o script") passa de "FAQ" para **FAQ `null`**, e a ação sugerida passa a ser "Encaminhar para a mentoria pedir mais detalhes".
+   - **Por quê:** a mensagem não diz qual ferramenta, qual erro ou qual contexto. Um "Dica Rápida" sobre ela seria genérico ou inventado, e o prompt manda não preencher só para completar. A mensagem continua contando no total de interações e no sentimento.
+   - **Evidência (09/11/2026, `main` em `53d1396`):** a mensagem foi processada sozinha, sem `--oci`, com `python -m src.pipeline`, em duas execuções. Nas duas, `sugestao_conteudo_faq` veio `null` (post e newsletter também). O sentimento variou entre `Negativo` e `Neutro`, e os tópicos foram "erro de execução" e "script" nas duas.
+   - **Não muda código nem prompt.** A rota continua pelo tipo (decisão 1): o código deixa o `DEMO_06` passar, e a LLM decide. Como a LLM varia, o resultado é o comportamento esperado, não uma garantia. Se alguma execução gerar FAQ para uma mensagem como essa, a conferência é humana, na curadoria.
+   - **Lote completo:** o contrato tem uma única sugestão de FAQ por lote (decisão 4). Num lote com várias dúvidas, o FAQ trata de um só tema, então o `DEMO_06` só pode ser avaliado sozinho, como acima.
 
 ### Evolução futura
 
@@ -99,4 +106,4 @@ As duas etapas têm teste automático (`tests/test_ramificacoes.py` e `tests/tes
 
 ## 5. Conferência com o gabarito dos casos de demo
 
-A tabela da seção 1 concorda com `docs/resultados_esperados.md`: `DEMO_01` e `DEMO_09` (depoimento) → post; `DEMO_02`, `DEMO_06`, `DEMO_07` e `DEMO_10` (pergunta técnica) → FAQ; `DEMO_03` (feedback) → newsletter; `DEMO_08` (feedback vago) → nenhum ativo.
+A tabela da seção 1 concorda com `docs/resultados_esperados.md`: `DEMO_01` e `DEMO_09` (depoimento) → post; `DEMO_02`, `DEMO_07` e `DEMO_10` (pergunta técnica) → FAQ; `DEMO_03` (feedback) → newsletter; `DEMO_06` (pergunta técnica vaga, decisão 12) e `DEMO_08` (feedback vago) → nenhum ativo.
