@@ -1,14 +1,16 @@
-# G10-Brasil-equipe12-CommunityLab
+<p align="center">
+  <img src="assets/logo_pauta_ia.png" alt="Logo da Pauta IA: um balão de fala em forma de folha de caderno pautada, com carinha sorridente, ao lado do nome Pauta IA" width="420">
+</p>
 
-## CommunityLab 🤖💬
-
-> Motor Inteligente de Transformação e Distribuição para Comunidades Digitais
+> **CommunityLab**: Motor Inteligente de Transformação e Distribuição para Comunidades Digitais
 
 **Hackathon ONE G10 · Oracle Next Education & Alura · Equipe G10-BRASIL-equipe 12**
 
+A **Pauta IA** é o agente do CommunityLab (nome escolhido em votação pelo time). Ela lê as mensagens de uma comunidade digital, escolhe as melhores histórias e dúvidas e escreve o rascunho de um post para o LinkedIn, de um destaque para a newsletter e de uma sugestão de FAQ. Uma pessoa revisa, aprova e publica com o próprio login: a Pauta IA não publica nada sozinha.
+
 <!--
   README ÚNICO: junta o que estava nos PRs #4, #6 e #9, o esqueleto de seções e as decisões do time.
-  Comentários como este não aparecem no GitHub. Seções com 🚧 ainda não têm conteúdo.
+  Comentários como este não aparecem no GitHub.
   Nunca colocar chaves de API, e-mails pessoais ou dados da conta OCI: o repositório é público.
 -->
 
@@ -30,13 +32,13 @@ Comunidades digitais geram todos os dias histórias inspiradoras, dúvidas recor
 
 Requisitos mínimos do desafio:
 
-- [ ] Ingestão funcional de interações da comunidade (mensagens, CSV ou JSON simulando canais)
-- [ ] Análise de sentimento e extração de tópicos com LLM
-- [ ] Geração automatizada de pelo menos 2 formatos de ativos de marketing
-- [ ] Orquestração do fluxo com Python ou ferramenta equivalente
-- [ ] Integração ativa com o OCI Object Storage (camada Always Free)
-- [ ] Demonstração de no mínimo 3 exemplos de transformação de interações em ativos
-- [ ] Repositório no GitHub com documentação e diagrama da esteira de distribuição
+- [x] Ingestão funcional de interações da comunidade (mensagens, CSV ou JSON simulando canais)
+- [x] Análise de sentimento e extração de tópicos com LLM
+- [x] Geração automatizada de pelo menos 2 formatos de ativos de marketing
+- [x] Orquestração do fluxo com Python ou ferramenta equivalente
+- [x] Integração ativa com o OCI Object Storage (camada Always Free)
+- [x] Demonstração de no mínimo 3 exemplos de transformação de interações em ativos
+- [x] Repositório no GitHub com documentação e diagrama da esteira de distribuição
 
 ## 👥 4. Público-Alvo e Casos de Uso
 
@@ -68,7 +70,7 @@ graph TD
     T --> D["Análise com LLM (Groq): sentimento, tópicos e ativos"]
     D --> E{"Resposta no formato?"}
     E -->|Sim| K["Checagem do código: descarta ativo sem mensagem do tipo certo e nome protegido"]
-    K --> F["Montagem: contagem e bloco do OCI feitos pelo código"]
+    K --> F["Montagem: contagem e bloco da OCI feitos pelo código"]
     E -->|Não| R{"Restam tentativas? (máximo 3)"}
     R -->|Sim| D
     R -->|Não| X["Erro claro para quem chamou"]
@@ -77,6 +79,14 @@ graph TD
     F -.-> I["Curadoria e aprovação (Streamlit)"]
 ```
 
+**Diagrama da esteira (versão para o demo day):** o fluxo completo do motor, da entrada do lote até a cópia local e a OCI. A curadoria no Streamlit (seção 10) acontece depois e não aparece nesta imagem. Clique na imagem para ver em tamanho maior.
+
+<p align="center">
+  <a href="docs/evidencias/diagrama_arquitetura_pipeline.png">
+    <img src="docs/evidencias/diagrama_arquitetura_pipeline.png" alt="Diagrama da esteira do CommunityLab: entrada do lote, ingestão, limpeza, seleção da amostra, roteamento, análise com a LLM, checagem do código, montagem da resposta e armazenamento local e na OCI" width="560">
+  </a>
+</p>
+
 ### Etapas e situação atual
 
 | # | Etapa | O que faz | Módulo | Situação |
@@ -84,9 +94,9 @@ graph TD
 | 1 | Ingestão e validação | Lê o lote (JSON ou CSV) e confere o formato; informa o campo errado | `src/ingestao.py`, `src/schemas.py` | ✅ Pronto |
 | 2 | Limpeza | Remove mensagens vazias e duplicadas, padroniza o texto e preserva o `id` | `src/limpeza.py`, `src/relevancia.py` (pontuação de 0 a 100; em lotes grandes escolhe a amostra enviada à LLM) | ✅ Pronto |
 | 3 | Análise com LLM | Pede à LLM sentimento, tópicos e os ativos que têm material, em JSON, com nova tentativa se vier fora do formato | `src/prompts.py`, `src/ia_service.py`, `src/validacao.py`, `src/utils/prompt_loader.py` (guias em `prompts/`, com regras e exemplos few-shot) | ✅ Pronto |
-| 4 | Roteamento e resumo | O código roteia pelo tipo da mensagem: antes da LLM, pede só os ativos que têm material; depois, descarta o ativo sem mensagem do tipo certo e o post ou a newsletter que cita quem só fez pergunta técnica ou conversa geral. Também monta a contagem e o bloco do OCI | `src/roteamento.py`, `src/prompts.py`, `src/schemas.py` (`montar_resposta`) | ✅ Pronto |
+| 4 | Roteamento e resumo | O código roteia pelo tipo da mensagem: antes da LLM, pede só os ativos que têm material; depois, descarta o ativo sem mensagem do tipo certo e o post ou a newsletter que cita quem só fez pergunta técnica ou conversa geral. Também monta a contagem e o bloco da OCI | `src/roteamento.py`, `src/prompts.py`, `src/schemas.py` (`montar_resposta`) | ✅ Pronto |
 | 5 | Geração de ativos | Gera post de LinkedIn, destaque de newsletter e sugestão de FAQ, cada um com o tom do canal (`null` quando não há material) | Mesma chamada da etapa 3 | ✅ Pronto |
-| 6 | Curadoria e aprovação | Uma pessoa edita, aprova ou reprova cada texto na interface | `interface_streamlit.py`, `src/interface_logica.py` | ✅ Pronto (a decisão fica salva em `saida/`; não envia nada ao OCI) |
+| 6 | Curadoria e aprovação | Uma pessoa edita, aprova ou reprova cada texto na interface | `interface_streamlit.py`, `src/interface_logica.py` | ✅ Pronto (a decisão fica salva em `saida/`; não envia nada à OCI) |
 | 7 | Armazenamento | Salva o pacote final no bucket da OCI | `src/oracle_storage.py`, `src/pipeline.py` (opção `--oci`) | ✅ Ligado ao pipeline e testado com upload real (confirmado no console em 27/10/2026) |
 
 O formato de dados (entrada e saída) está definido em um só lugar, `src/schemas.py`, e todos os módulos usam esses modelos. A resposta da LLM é validada em `src/validacao.py`, **sem valores de segurança falsos**: se a LLM responder fora do formato, o erro é informado em vez de gerar conteúdo inventado com `status: "sucesso"`.
@@ -113,6 +123,10 @@ O formato de dados (entrada e saída) está definido em um só lugar, `src/schem
 
 **Régua de relevância:** os critérios de Alta, Média e Baixa relevância e o cálculo da pontuação de 0 a 100 estão em [`docs/regua_relevancia.md`](docs/regua_relevancia.md).
 
+**Conferência de fidelidade:** [`docs/checklist-fidelidade.md`](docs/checklist-fidelidade.md) registra a conferência completa dos textos gerados contra as mensagens originais do dataset simulado.
+
+**Teste da limpeza (Sprint 2):** [`docs/resultado-teste-limpeza.md`](docs/resultado-teste-limpeza.md) guarda o resultado histórico dos testes de limpeza, de antes da remoção de duplicatas.
+
 **Ponto de entrada único:** a função `processar_lote(lote)`, em `src/pipeline.py`, executa as etapas 1 a 5 (e a 7, com `salvar_oci=True`). Assim, tanto uma API quanto o Streamlit podem chamar a mesma lógica, e dá para testar sem subir servidor.
 
 **Decisão de orquestração:** o fluxo é orquestrado em Python puro, pela função `processar_lote()`. O desafio pede orquestração "com Python ou ferramenta equivalente", e esta escolha cumpre o requisito com o menor custo de manutenção para um MVP. Servidor de API, fila de tarefas e workers (por exemplo FastAPI, Celery e Redis) exigiriam infraestrutura nova, com hospedagem, segurança, testes e manutenção contínua, e ficam como evolução futura. Como `processar_lote()` não depende de interface, essas camadas poderão chamá-la depois sem reescrever o motor.
@@ -122,7 +136,7 @@ from src.ingestao import ler_mensagens_comunidade
 from src.pipeline import processar_lote
 
 lote = ler_mensagens_comunidade("dados/mensagens_exemplo.json")
-resposta = processar_lote(lote)   # envio ao OCI só com salvar_oci=True
+resposta = processar_lote(lote)   # envio à OCI só com salvar_oci=True
 print(resposta.para_dict())       # dicionário no formato de saída do desafio
 ```
 
@@ -261,7 +275,7 @@ A resposta segue o formato do desafio:
 | `potencial_engajamento` | A LLM | `Alto`, `Médio` ou `Baixo` |
 | `armazenamento_oci` | O código | `pendente_upload` (rodou sem `--oci`: o pacote foi só para `saida/`), `salvo_com_sucesso` ou `falha_ao_salvar` (com `detalhe_erro`) |
 
-Ao usar a resposta no código, chame `resposta.para_dict()`: ele devolve `copy` (e não `copy_`) e é o formato que deve ser impresso, salvo no OCI ou mostrado no Streamlit.
+Ao usar a resposta no código, chame `resposta.para_dict()`: ele devolve `copy` (e não `copy_`) e é o formato que deve ser impresso, salvo na OCI ou mostrado no Streamlit.
 
 <!-- O desafio lista como formas de ingestão: JSON, CSV, Webhook ou integração com plataformas.
      A versão anterior citava PDF como entrada. Confirmar se era intencional antes de incluir. -->
@@ -288,7 +302,7 @@ A interface é feita em **Streamlit**. A ideia é mostrar o resumo da comunidade
 streamlit run interface_streamlit.py
 ```
 
-Na própria página, escolha um dos exemplos de demonstração (Conquistas da comunidade, Proposta de estágio e freela, Dúvida técnica) ou envie um `.json` ou `.csv`, e clique em **Gerar conteúdo**. A tela mostra os três conteúdos prontos para revisar (post para o LinkedIn, destaque para a newsletter e pergunta frequente sugerida; o que não tiver material mostra o motivo) e, no fim da página, o resumo da comunidade (mensagens analisadas, clima da comunidade e assuntos da semana). A tela é simples de propósito: não tem barra lateral nem campos técnicos (período, limite de mensagens ou JSON). O período vem do próprio arquivo (no CSV, usa `Semana_Atual`) e o limite é o padrão do motor (10 mensagens). Ela usa a chave da Groq do arquivo `.env`, como a linha de comando, e **não envia nada ao OCI**. A cópia local continua sendo gravada em `saida/`. As cores da marca ficam em `.streamlit/config.toml` (botão azul, fundo branco e caixas cinza-claro) e as etiquetas amarelas, em `interface_streamlit.py`. O agente se chama **Pauta IA** (nome escolhido em votação pelo time). O nome fica em `NOME_AGENTE`, em `interface_streamlit.py`. O topo da tela mostra a logo centralizada (`assets/logo_pauta_ia.png`: mascote e nome, com o "IA" em azul); o mascote sozinho fica em `assets/mascote.png` (ícone da aba) e o original vetorial, em `assets/mascote.svg`. O mascote é um desenho original do projeto: um balão de fala em forma de folha de caderno pautada, nas cores da marca. Como o nome está dentro da imagem da logo, trocar o nome exige gerar a imagem de novo. O nome do projeto continua sendo CommunityLab. A lógica fica em `src/interface_logica.py` (com testes offline) e a tela, em `interface_streamlit.py`.
+Na própria página, escolha um dos exemplos de demonstração (Conquistas da comunidade, Proposta de estágio e freela, Dúvida técnica) ou envie um `.json` ou `.csv`, e clique em **Gerar conteúdo**. A tela mostra os três conteúdos prontos para revisar (post para o LinkedIn, destaque para a newsletter e pergunta frequente sugerida; o que não tiver material mostra o motivo) e, no fim da página, o resumo da comunidade (mensagens analisadas, clima da comunidade e assuntos da semana). A tela é simples de propósito: não tem barra lateral nem campos técnicos (período, limite de mensagens ou JSON). O período vem do próprio arquivo (no CSV, usa `Semana_Atual`) e o limite é o padrão do motor (10 mensagens). Ela usa a chave da Groq do arquivo `.env`, como a linha de comando, e **não envia nada à OCI**. A cópia local continua sendo gravada em `saida/`. As cores da marca ficam em `.streamlit/config.toml` (botão azul, fundo branco e caixas cinza-claro) e as etiquetas amarelas, em `interface_streamlit.py`. O agente se chama **Pauta IA** (nome escolhido em votação pelo time). O nome fica em `NOME_AGENTE`, em `interface_streamlit.py`. O topo da tela mostra a logo centralizada (`assets/logo_pauta_ia.png`: mascote e nome, com o "IA" em azul); o mascote sozinho fica em `assets/mascote.png` (ícone da aba) e o original vetorial, em `assets/mascote.svg`. O mascote é um desenho original do projeto: um balão de fala em forma de folha de caderno pautada, nas cores da marca. Como o nome está dentro da imagem da logo, trocar o nome exige gerar a imagem de novo. O nome do projeto continua sendo CommunityLab. A lógica fica em `src/interface_logica.py` (com testes offline) e a tela, em `interface_streamlit.py`.
 
 **Passo 2 (pronto):** editar, aprovar ou reprovar cada texto.
 
@@ -298,7 +312,7 @@ Na própria página, escolha um dos exemplos de demonstração (Conquistas da co
 - **Aprovar** abre uma janela com as pessoas citadas no texto e duas confirmações obrigatórias: que os fatos foram conferidos com as mensagens e que há **autorização** de quem aparece com nome. A lista de pessoas é só um auxílio: o código não verifica autorização (ver `docs/regras_roteamento.md`, decisão 10).
 - **Quem não autorizou o nome:** em “Alguém não autorizou a divulgação do nome?”, a pessoa marca quem não autorizou antes de gerar. O nome dessa pessoa é trocado por “uma pessoa da comunidade” (e “outra pessoa da comunidade”, “uma terceira...”, para as histórias não se misturarem) **antes de o lote ir à Groq**, e a tela avisa o que foi trocado. Quem só fez pergunta ou conversa geral fica como “Participante”. O nome completo é trocado em todas as mensagens; o primeiro nome também, a menos que outra pessoa do lote tenha o mesmo. **Isto não garante o anonimato:** apelido, cargo ou contexto ainda podem identificar alguém, e a revisão humana continua obrigatória.
 - **Reprovar** aceita um motivo opcional, com motivos prontos (por exemplo, “Sem autorização das pessoas citadas”). Sem a autorização de quem aparece com nome, a tela orienta a trocar o nome no texto (por exemplo, por “uma pessoa da comunidade”) ou reprovar.
-- A decisão de cada texto é gravada em `saida/<período>_curadoria.json` (pasta ignorada pelo Git), com o texto original, o texto final, quem revisou, quando e as confirmações. O pacote gerado pelo motor **não é alterado** e **nada é enviado ao OCI**.
+- A decisão de cada texto é gravada em `saida/<período>_curadoria.json` (pasta ignorada pelo Git), com o texto original, o texto final, quem revisou, quando e as confirmações. O pacote gerado pelo motor **não é alterado** e **nada é enviado à OCI**.
 - Cada texto aprovado aparece em **Prontos para publicar**, com um quadro para copiar e colar (o post tem também o botão **Abrir o LinkedIn (depois, cole o texto)**, que abre o feed: **1.** copiar o texto, **2.** abrir o LinkedIn e colar. A pessoa entra com o **próprio login** e publica). O CommunityLab **não publica nada sozinho**, para manter a última conferência humana. O LinkedIn não aceita, de forma confiável, texto preenchido pelo endereço, por isso o texto é colado.
 - Na área **Para o time técnico**, o botão **Baixar os textos aprovados** gera um `.json` só com o que foi aprovado.
 
@@ -339,6 +353,8 @@ communitylab-ativos-marketing/   (bucket)
 **Situação:** a função `salvar_no_oci` foi testada com upload real no bucket, e o pipeline completo também, com o comando `python -m src.pipeline dados/caso_proposta_estagio.json --oci --periodo Semana_Teste`. O teste usou um período de teste, então não sobrescreveu o pacote de nenhuma semana real.
 
 **Evidência:** a captura do console mostra o objeto `ativos/2026-semana-teste/pacote-distribuicao.json` (1,43 KiB, modificado em 07/11/2026, 19:13 UTC): [`docs/evidencias/oci_bucket_2026-semana-teste.png`](docs/evidencias/oci_bucket_2026-semana-teste.png). A imagem não mostra namespace, OCIDs nem configuração da conta. Como o objeto de um mesmo período é sobrescrito a cada envio, a captura mostra a execução mais recente.
+
+**Relatório da execução completa:** [`docs/evidencias/relatorio_execucao_oci.md`](docs/evidencias/relatorio_execucao_oci.md) traz o comando executado e a saída do terminal da execução de 07/11/2026, feita por Denilson Silva de Almeida.
 
 <!-- Não colocar chaves, OCIDs, namespace nem configurações de conta. -->
 
@@ -467,15 +483,22 @@ Legenda: ✅ concluída · 🔄 em andamento · ☐ não iniciada
 | Sprint 0 | 12/10 a 18/10 | ✅ |
 | Sprint 1 | 19/10 a 25/10 | ✅ |
 | Sprint 2 | 26/10 a 01/11 | ✅ |
-| Sprint 3 | 02/11 a 08/11 | 🔄 |
-| Sprint 4 | 09/11 a 15/11 | ☐ |
+| Sprint 3 | 02/11 a 08/11 | ✅ |
+| Sprint 4 | 09/11 a 15/11 | 🔄 |
 | Sprint 5 | 16/11 a 22/11 | ☐ |
 
 ## 👥 15. Equipe e Responsabilidades
 
-🚧 em construção
+Equipe G10-BRASIL-equipe 12 (em ordem alfabética):
 
-<!-- Preencher só depois que a divisão de tarefas for confirmada por todos. -->
+| Nome | Função |
+| :--- | :--- |
+| Ana Victoria Dornelas | Data Analyst |
+| Bruna Medeiros Brandão | Data Analyst |
+| Denilson Silva de Almeida | Data Engineer |
+| Jaklene Lima | Marketing, Conteúdo e Copywriting |
+| Tomaz Antônio Roza da Silva | Data Analyst |
+| Wesley Figueiredo | Backend Developer |
 
 ## 📄 16. Licença
 
