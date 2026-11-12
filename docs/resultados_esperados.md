@@ -36,3 +36,39 @@ A tabela mostra o comportamento esperado **por mensagem**; já o pipeline atual 
 - **DEMO_09 — nuance de sentimento:** o caso relata conquista ("consegui finalizar") mas também dificuldades ("tive bastante dificuldade"). Foi classificado como `Positivo` (e não `Altamente Positivo`) para diferenciar do DEMO_01, que é comemoração pura. Decisão sujeita a ajuste do time.
 - **DEMO_10 — múltiplos tópicos:** primeiro caso com 4 tópicos específicos em mensagem longa; bom teste para verificar se o motor extrai múltiplos tópicos (casos anteriores eram mais curtos).
 - **DEMO_03 — relevância:** o gabarito indica `Média` (feedback detalhado), mas o motor hoje devolve `Baixa`, porque feedback pontua 10. É uma divergência conhecida, listada em "Pontos em aberto" da [régua de relevância](regua_relevancia.md), e não afeta a rota (feedback gera newsletter).
+
+
+## TABELA DE RESULTADOS ESPERADOS X OBTIDOS 
+
+Teste realizado pela primeira vez no dia  6/11
+
+## Tabela 1 (DEMO):
+| ID | Post esperado | Newsletter esperada | FAQ esperado | Post Obtido | Newsletter Obtida | FAQ Obtido | Diverge? |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **DEMO 01** | Post LinkedIn | Newsletter | null | Post LinkedIn | Newsletter | null | Não |
+| **DEMO 02** | null | null | FAQ | null | null | FAQ | Não |
+| **DEMO 03** | null | Newsletter | null | null | Newsletter | null | Não |
+| **DEMO 04** | null | null | null | null | null | null | Não (descartada na limpeza) |
+| **DEMO 05** | null | null | null | null | null | null | Não (descartada na limpeza) |
+| **DEMO 06** | null | null | null | null | null | null | Não (decisão 12, PR #52) |
+| **DEMO 07** | null | null | FAQ | null | null | FAQ | Não |
+| **DEMO 08** | null | null | null | null | null | null | Não |
+| **DEMO 09** | Post LinkedIn | Newsletter | null | Post LinkedIn | Newsletter | null | Não |
+| **DEMO 10** | null | null | FAQ | null | null | FAQ | Não |
+
+## Observações
+
+- O sistema retorna uma sugestão de FAQ para cada lote processado (conforme a decisão 4 em regras_roteamento.md). Nesse teste cada linha exibe o resultado da mensagem avaliada isoladamente. 
+
+### Tabela 2 (dataset 50):
+
+| ID | Post esperado | Newsletter esperada | FAQ esperado | Post Obtido | Newsletter Obtida | FAQ Obtido | Diverge? |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **MSG_001, MSG_037, MSG_006, MSG_010, MSG_016** | Post LinkedIn | Newsletter | null | Post LinkedIn | Newsletter | null | Não |
+| **MSG_036, MSG_002, MSG_005** | null | null | "Dica Rápida: conectar a API da Groq no OCI sem erro de autenticação" | null | null | "Dica Rápida: conectar a API da Groq no OCI sem erro de autenticação" | Não |
+| **MSG_003** | null | Newsletter | null | null | Newsletter | null | Não |
+| **MSG_004** | null | null | null | null | null | null | Não |
+
+## Observações 
+
+- Apenas 10 mensagens vão para a LLM, as 47 que sobram depois da limpeza são reduzidas a uma amostra.
