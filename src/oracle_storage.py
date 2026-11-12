@@ -23,13 +23,18 @@ def montar_caminho(periodo_referencia: str, ano: int | None = None) -> str:
     return f"ativos/{ano}-{pasta}/pacote-distribuicao.json"
 
 
-def salvar_no_oci(pacote: dict, periodo_referencia: str = "Semana_04", cliente=None) -> dict:
-    """Envia o pacote (dict) como JSON para o bucket e devolve o bloco 'armazenamento_oci'.
+def montar_caminho_relatorio(periodo_referencia: str, ano: int | None = None) -> str:
+    """'Semana_04' -> 'ativos/2026-semana-04/relatorio-comunidade.md' (ao lado do pacote)."""
+    pasta = montar_caminho(periodo_referencia, ano).rsplit("/", 1)[0]
+    return f"{pasta}/relatorio-comunidade.md"
+
+
+def _enviar(conteudo: bytes, caminho: str, cliente=None, content_type: str | None = None) -> dict:
+    """Envia os bytes ao bucket e devolve o bloco 'armazenamento_oci' (nunca levanta erro).
 
     `cliente` existe só para testes (permite passar um cliente falso).
     """
     bucket = os.getenv("OCI_BUCKET", BUCKET_PADRAO)
-    caminho = montar_caminho(periodo_referencia)
     resultado = {"bucket": bucket, "caminho_objeto": caminho, "status": "falha_ao_salvar"}
 
     try:
@@ -44,9 +49,27 @@ def salvar_no_oci(pacote: dict, periodo_referencia: str = "Semana_04", cliente=N
             cliente = oci.object_storage.ObjectStorageClient(config)
 
         namespace = cliente.get_namespace().data
-        corpo = json.dumps(pacote, ensure_ascii=False, indent=2).encode("utf-8")
-        cliente.put_object(namespace, bucket, caminho, corpo)
+        if content_type:
+            cliente.put_object(namespace, bucket, caminho, conteudo, content_type=content_type)
+        else:
+            cliente.put_object(namespace, bucket, caminho, conteudo)
         resultado["status"] = "salvo_com_sucesso"
     except Exception as erro:  # mostra o tipo do erro, nunca dados da configuração
         resultado["detalhe_erro"] = type(erro).__name__
     return resultado
+
+
+def salvar_no_oci(pacote: dict, periodo_referencia: str = "Semana_04", cliente=None) -> dict:
+    """Envia o pacote (dict) como JSON para o bucket e devolve o bloco 'armazenamento_oci'."""
+    corpo = json.dumps(pacote, ensure_ascii=False, indent=2).encode("utf-8")
+    return _enviar(corpo, montar_caminho(periodo_referencia), cliente=cliente)
+
+
+def salvar_relatorio_no_oci(relatorio: str, periodo_referencia: str = "Semana_04", cliente=None) -> dict:
+    """Envia o relatório (texto Markdown) para o bucket, ao lado do pacote, e devolve o mesmo bloco de status."""
+    return _enviar(
+        relatorio.encode("utf-8"),
+        montar_caminho_relatorio(periodo_referencia),
+        cliente=cliente,
+        content_type="text/markdown; charset=utf-8",
+    )
