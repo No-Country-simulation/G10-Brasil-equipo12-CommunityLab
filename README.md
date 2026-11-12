@@ -473,14 +473,14 @@ Legenda: ✅ concluída · 🔄 em andamento · ☐ não iniciada
 
 Equipe G10-BRASIL-equipe 12 (em ordem alfabética):
 
-| Nome | Função |
-| :--- | :--- |
-| Ana Victoria Dornelas | Data Analyst |
-| Bruna Medeiros Brandão | Data Analyst |
-| Denilson Silva de Almeida | Data Engineer |
-| Jaklene Lima | Marketing, Conteúdo e Copywriting |
-| Tomaz Antônio Roza da Silva | Data Analyst |
-| Wesley Figueiredo | Backend Developer |
+| Nome | Função | Responsabilidades |
+| :--- | :--- | :--- |
+| Ana Victoria Dornelas | Data Analyst | Apoio na documentação (README), testes com casos de dados sujos e validação dos exemplos de demonstração. |
+| Bruna Medeiros Brandão | Data Analyst | Desenvolvimento da interface Streamlit, definição dos prompts e regras de linguagem sem marca de gênero. |
+| Denilson Silva de Almeida | Data Engineer | Infraestrutura e integração com Oracle Cloud Infrastructure (OCI), envio de pacotes e revisão técnica. |
+| Jaklene Lima | Marketing, Conteúdo e Copywriting | Estruturação da comunicação, tom de voz e alinhamento do conteúdo para LinkedIn e newsletter. |
+| Tomaz Antônio Roza da Silva | Data Analyst | Testes funcionais da interface com exemplos de demonstração, documentação de equipe/responsabilidades e revisão de PR. |
+| Wesley Figueiredo | Backend Developer | Testes de execução limpa da interface do zero, identificação de gargalos e suporte ao backend. |
 
 ## 📄 16. Licença
 
