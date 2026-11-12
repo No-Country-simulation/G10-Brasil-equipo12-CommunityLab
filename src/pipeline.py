@@ -25,7 +25,8 @@ from src.ingestao import ler_mensagens_comunidade, validar_lote
 from src.limpeza import anonimizar_conversas_gerais, limpar_dados_comunidade
 from src.relevancia import LIMITE_AMOSTRA_PADRAO, selecionar_amostra
 from src.roteamento import aplicar_regras_de_roteamento, ativos_com_material
-from src.oracle_storage import BUCKET_PADRAO, montar_caminho, salvar_no_oci
+from src.oracle_storage import BUCKET_PADRAO, montar_caminho, montar_caminho_relatorio, salvar_no_oci, salvar_relatorio_no_oci
+from src.relatorio import montar_relatorio
 from src.schemas import ArmazenamentoOci, LoteEntrada, RespostaCommunityLab, montar_resposta
 
 load_dotenv(override=True)
@@ -45,6 +46,12 @@ def caminho_local(periodo_referencia: str, pasta_saida: str = PASTA_SAIDA_PADRAO
     return Path(pasta_saida) / nome
 
 
+def caminho_local_relatorio(periodo_referencia: str, pasta_saida: str = PASTA_SAIDA_PADRAO) -> Path:
+    """'Semana_04' -> saida/2026-semana-04_relatorio-comunidade.md"""
+    nome = montar_caminho_relatorio(periodo_referencia).removeprefix("ativos/").replace("/", "_")
+    return Path(pasta_saida) / nome
+
+
 def processar_lote(
     lote: dict,
     salvar_oci: bool = False,
@@ -55,7 +62,8 @@ def processar_lote(
     cliente_oci=None,
 ) -> RespostaCommunityLab:
     """Executa o fluxo completo: valida, limpa, pontua relevância, analisa com a LLM,
-    monta a resposta, (opcionalmente) envia ao OCI e grava uma cópia local em UTF-8.
+    monta a resposta, (opcionalmente) envia ao OCI e grava uma cópia local em UTF-8, junto com o
+    relatório da semana em Markdown (src/relatorio.py), que também vai ao OCI com salvar_oci=True.
 
     salvar_oci=False por padrão de propósito: enviar sobrescreve o objeto do período
     no bucket. Para testar, use um período de teste (ex.: "Semana_Teste").
@@ -78,7 +86,9 @@ def processar_lote(
 
     # A contagem oficial é a do lote inteiro, mesmo que a LLM analise só uma amostra
     total_lote = len(dados_limpos["interacoes"])
+    autores_do_lote = [i.get("autor") or "" for i in dados_limpos["interacoes"]]  # só para o relatório omitir nomes
     dados_limpos["interacoes"] = selecionar_amostra(dados_limpos["interacoes"], limite_amostra)
+    total_amostra = len(dados_limpos["interacoes"])
     if len(dados_limpos["interacoes"]) < total_lote:
         logger.warning(
             "Lote com %d mensagens: a LLM analisou uma amostra de %d (por relevância e tipo). "
@@ -113,7 +123,27 @@ def processar_lote(
         resultado = salvar_no_oci(pacote, periodo, cliente=cliente_oci)
         resposta = resposta.model_copy(update={"armazenamento_oci": ArmazenamentoOci(**resultado)})
 
+    # Relatório legível (sem nomes nem trechos de mensagens), ao lado do pacote
+    relatorio = montar_relatorio(
+        resposta,
+        periodo,
+        total_amostra=total_amostra,
+        ativos_pedidos=ativos,
+        autores=autores_do_lote,
+        caminho_relatorio=montar_caminho_relatorio(periodo) if salvar_oci else "",
+    )
+    if salvar_oci:
+        resultado_relatorio = salvar_relatorio_no_oci(relatorio, periodo, cliente=cliente_oci)
+        if resultado_relatorio["status"] != "salvo_com_sucesso":
+            logger.warning(
+                "O relatório não foi enviado ao OCI (%s). O pacote tem o seu próprio status em armazenamento_oci.",
+                resultado_relatorio.get("detalhe_erro", "erro desconhecido"),
+            )
+
     if pasta_saida:
+        arquivo_relatorio = caminho_local_relatorio(periodo, pasta_saida)
+        arquivo_relatorio.parent.mkdir(parents=True, exist_ok=True)
+        arquivo_relatorio.write_text(relatorio, encoding="utf-8")
         destino = caminho_local(periodo, pasta_saida)
         destino.parent.mkdir(parents=True, exist_ok=True)
         destino.write_text(json.dumps(resposta.para_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
@@ -159,6 +189,7 @@ def main(argv=None) -> int:
 
     print(json.dumps(resposta.para_dict(), indent=2, ensure_ascii=False))
     print(f"\nCópia local: {caminho_local(lote['periodo_referencia'])}")
+    print(f"Relatório local: {caminho_local_relatorio(lote['periodo_referencia'])}")
     return 0
 
 
