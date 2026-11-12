@@ -61,31 +61,13 @@ As regras completas de qual tipo de mensagem gera qual ativo estão na seção 5
 
 O fluxo de dados do **CommunityLab** segue estas etapas:
 
-```mermaid
-graph TD
-    A["Entrada: lote JSON ou CSV"] --> B["Ingestão: valida o formato (contrato em schemas.py)"]
-    B --> C["Limpeza: remove mensagens vazias e duplicadas e padroniza o texto"]
-    C --> S["Seleção da amostra: até 10 mensagens, por relevância e tipo"]
-    S --> T["Roteamento por tipo: pede à LLM só os ativos que têm material"]
-    T --> D["Análise com LLM (Groq): sentimento, tópicos e ativos"]
-    D --> E{"Resposta no formato?"}
-    E -->|Sim| K["Checagem do código: descarta ativo sem mensagem do tipo certo e nome protegido"]
-    K --> F["Montagem: contagem e bloco da OCI feitos pelo código"]
-    E -->|Não| R{"Restam tentativas? (máximo 3)"}
-    R -->|Sim| D
-    R -->|Não| X["Erro claro para quem chamou"]
-    F --> G["Cópia local em saida/"]
-    F --> H["OCI Object Storage (opção --oci)"]
-    F -.-> I["Curadoria e aprovação (Streamlit)"]
-```
-
-**Diagrama da esteira (versão para o demo day):** o fluxo completo do motor, da entrada do lote até a cópia local e a OCI. A curadoria no Streamlit (seção 10) acontece depois e não aparece nesta imagem. Clique na imagem para ver em tamanho maior.
-
 <p align="center">
-  <a href="docs/evidencias/diagrama_arquitetura_pipeline.png">
-    <img src="docs/evidencias/diagrama_arquitetura_pipeline.png" alt="Diagrama da esteira do CommunityLab: entrada do lote, ingestão, limpeza, seleção da amostra, roteamento, análise com a LLM, checagem do código, montagem da resposta e armazenamento local e na OCI" width="560">
-  </a>
+  <img src="docs/evidencias/fluxo_esteira.png" alt="Fluxo do CommunityLab: a interface troca o nome de quem não autorizou; depois vêm entrada do lote, ingestão, limpeza, seleção da amostra, roteamento por tipo, análise com a LLM (com nova tentativa se a resposta vier fora do formato), checagem do código e montagem da resposta; o resultado vai para a cópia local, para o OCI (opção --oci) e para a curadoria humana no Streamlit" width="620">
 </p>
+
+O código-fonte do fluxo está em [`docs/evidencias/fluxo_esteira.mmd`](docs/evidencias/fluxo_esteira.mmd). Para regenerar a imagem depois de editar: `mmdc -i docs/evidencias/fluxo_esteira.mmd -o docs/evidencias/fluxo_esteira.png -b white -s 2`.
+
+**Versão para apresentação:** o [diagrama completo da arquitetura](docs/evidencias/diagrama_arquitetura_pipeline.png) (imagem grande, feita para o demo day) está em `docs/evidencias/`.
 
 ### Etapas e situação atual
 
