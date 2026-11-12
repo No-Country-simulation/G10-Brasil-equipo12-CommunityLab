@@ -264,7 +264,7 @@ MOTIVOS_REPROVACAO = (
 URL_LINKEDIN = "https://www.linkedin.com/feed/"
 
 # Orientação mostrada quando o texto cita alguém: como seguir sem a autorização da pessoa
-EXEMPLO_SEM_NOME = "uma aluna da nossa comunidade"
+EXEMPLO_SEM_NOME = "uma pessoa da comunidade"
 
 
 def campos_editaveis(chave: str) -> list:

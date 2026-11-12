@@ -62,6 +62,13 @@ st.markdown(
     ".topo .pequeno{font-size:.85rem;color:#6b7280;}"
     # título só para leitores de tela (o nome visível é a imagem da logo)
     ".so-leitor{position:absolute;left:-9999px;}"
+    # faixa de 4 passos (o passo opcional tem número só com borda)
+    ".passos{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 1.2rem 0;}"
+    ".passo{display:flex;gap:10px;align-items:flex-start;border:1px solid #d9d9d9;border-radius:10px;padding:12px 14px;background:#f7f8fb;}"
+    ".passo .num{flex:none;width:26px;height:26px;border-radius:50%;background:#1D4ED8;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px;}"
+    ".passo.opcional .num{background:#fff;color:#1D4ED8;border:2px solid #1D4ED8;}"
+    ".passo b{display:block;}.passo span{font-size:.85rem;color:#555;}"
+    "@media (max-width:900px){.passos{grid-template-columns:1fr 1fr;}}"
     "</style>",
     unsafe_allow_html=True,
 )
@@ -109,16 +116,20 @@ def _carregar_lote(origem):
 
 
 st.subheader("1. Escolha as mensagens e gere o conteúdo")
+st.markdown(
+    "<div class='passos'>"
+    "<div class='passo'><div class='num'>1</div><div><b>Escolha as mensagens</b><span>Exemplo do projeto ou o seu arquivo</span></div></div>"
+    "<div class='passo opcional'><div class='num'>2</div><div><b>Marque quem não autorizou o nome</b><span>Só se houver (opcional)</span></div></div>"
+    f"<div class='passo'><div class='num'>3</div><div><b>Gere o conteúdo</b><span>A {NOME_AGENTE} escreve os textos</span></div></div>"
+    "<div class='passo'><div class='num'>4</div><div><b>Revise e copie</b><span>Você decide o que publicar</span></div></div>"
+    "</div>",
+    unsafe_allow_html=True,
+)
 origem = st.radio("De onde vêm as mensagens?", ["Exemplo do projeto", "Enviar arquivo"], horizontal=True)
-col_escolha, col_botao = st.columns([3, 1], vertical_alignment="bottom")
-with col_escolha:
-    lote, identificador = _carregar_lote(origem)
+lote, identificador = _carregar_lote(origem)
 
 if lote is None:
     st.stop()
-
-with col_botao:
-    gerar = st.button("Gerar conteúdo", type="primary", width="stretch")
 
 st.info(frase_do_lote(lote))
 
@@ -127,15 +138,20 @@ with st.expander("Conferir o que a comunidade escreveu", expanded=False):
     st.dataframe(tabela_de_mensagens(lote), width="stretch", hide_index=True)
 
 autores = autores_do_lote(lote)
-with st.expander("Alguém não autorizou a divulgação do nome?", expanded=False):
+with st.expander("Alguém não autorizou a divulgação do nome?", expanded=True):
     st.caption(
         "Marque quem não autorizou. Antes de gerar, o nome dessa pessoa é trocado por “uma pessoa da comunidade” "
         "nas mensagens, e o agente conta a história sem identificá-la. "
         "Apelidos, cargos e outros detalhes ainda podem identificar alguém: confira o texto mesmo assim."
     )
-    sem_autorizacao = st.multiselect("Não tenho autorização para divulgar o nome de:", autores, key=f"sem_aut:{identificador}")
+    sem_autorizacao = st.multiselect(
+        "Não tenho autorização para divulgar o nome de:", autores, key=f"sem_aut:{identificador}", placeholder="Escolha as pessoas"
+    )
 if sem_autorizacao:
     st.caption("Ao gerar, os nomes marcados serão trocados antes de o texto ir ao agente.")
+
+gerar = st.button("Gerar conteúdo", type="primary", width="stretch")
+st.caption("Mudou a seleção? Clique em Gerar conteúdo de novo para atualizar os textos.")
 
 
 def _limpar_revisao():
@@ -152,6 +168,7 @@ if gerar:
             st.session_state["resultado"] = executar(lote_para_gerar)
             st.session_state["resultado_de"] = identificador
             st.session_state["trocas"] = trocas
+            st.session_state["resultado_sem_aut"] = sorted(sem_autorizacao)
             _limpar_revisao()
     except (ValueError, FileNotFoundError, ErroServicoLLM) as erro:
         st.session_state.pop("resultado", None)
@@ -161,6 +178,10 @@ if gerar:
 resultado = st.session_state.get("resultado")
 if resultado is None or st.session_state.get("resultado_de") != identificador:
     st.stop()
+
+# Os textos abaixo foram gerados com outra seleção de quem não autorizou: avisa em vez de deixar a pessoa achar que o nome já foi trocado
+if st.session_state.get("resultado_sem_aut") != sorted(sem_autorizacao):
+    st.warning("A seleção de quem não autorizou o nome mudou depois de gerar. Clique em **Gerar conteúdo** de novo para os textos refletirem a mudança.")
 
 resposta = resultado.resposta
 st.session_state.setdefault("decisoes", {})
@@ -349,7 +370,7 @@ if aprovados_agora:
         st.markdown(f"**{ATIVOS[d['ativo']][0]}**")
         st.code(texto_para_publicar(d["ativo"], d["texto_final"]), language=None, wrap_lines=True)
         if d["ativo"] == "post_linkedin":
-            st.link_button("Abrir o LinkedIn (depois, cole o texto)", URL_LINKEDIN)
+            st.link_button("Abrir o LinkedIn (depois, cole o texto)", URL_LINKEDIN, type="primary")
 
 with st.expander("Para o time técnico"):
     if validas:
