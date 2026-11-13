@@ -38,3 +38,40 @@ A tabela mostra o comportamento esperado **por mensagem**; já o pipeline atual 
 - **DEMO_06 — vaga, sem FAQ:** a mensagem ("deu error", "não consig rdodar o script") não diz ferramenta, erro nem contexto, então o esperado é FAQ `null`. Decisão 12 de [`regras_roteamento.md`](regras_roteamento.md), com reexecução em 09/11/2026 (duas execuções, FAQ `null` nas duas). A mensagem continua contando no total e no sentimento.
 - **FAQ por mensagem × FAQ por lote:** a coluna "FAQ esperado" diz se a mensagem tem material para um FAQ, mas o contrato devolve **uma** sugestão de FAQ por lote (decisão 4 de `regras_roteamento.md`). Num lote com várias dúvidas, a LLM escolhe uma delas. Por isso o `DEMO_06` foi testado sozinho.
 - **DEMO_03 — relevância:** o gabarito indica `Média` (feedback detalhado), mas o motor hoje devolve `Baixa`, porque feedback pontua 10. É uma divergência conhecida, listada em "Pontos em aberto" da [régua de relevância](regua_relevancia.md), e não afeta a rota (feedback gera newsletter).
+
+
+## TABELA DE RESULTADOS ESPERADOS X OBTIDOS 
+
+Teste realizado no dia 9/11/2026. 
+
+## TABELA 1 (DEMO):
+
+| ID | Post esperado | Newsletter esperada | FAQ esperado | Post Obtido | Newsletter Obtida | FAQ Obtido | Diverge? |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **DEMO 01** | Post LinkedIn | Newsletter | null | Post LinkedIn | Newsletter | null | Não |
+| **DEMO 02** | null | null | FAQ | null | null | FAQ | Não |
+| **DEMO 03** | null | Newsletter | null | null | Newsletter | null | Não |
+| **DEMO 04** | lote vazio | lote vazio | lote vazio | lote vazio | lote vazio | lote vazio | Não |
+| **DEMO 05** | null | null | FAQ | null | null | FAQ | Não |
+| **DEMO 06** | null | null | null | null | null | null | Não (decisão 12, PR #52) |
+| **DEMO 07** | null | null | FAQ | null | null | FAQ | Não |
+| **DEMO 08** | null | null | null | null | null | null | Não |
+| **DEMO 09** | Post LinkedIn | Newsletter | null | Post LinkedIn | Newsletter | null | Não |
+| **DEMO 10** | null | null | FAQ | null | null | FAQ | Não |
+
+## Observações
+
+- Cada DEMO foi testado individualmente, nesse caso DEMO 04 da erro de lote vazio e a DEMO 05 que seria duplicata da DEMO 02 segue como uma dúvida comum! No teste realizado como lote elas foram descartadas com a limpeza! 
+
+### TABELA 2 (DATASET DE 50):
+
+| ID | Post esperado | Newsletter esperada | FAQ esperado | Post Obtido | Newsletter Obtida | FAQ Obtido | Diverge? |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **MSG_001, MSG_037, MSG_006, MSG_010, MSG_016** | Post LinkedIn | Newsletter | null | Post LinkedIn | Newsletter | null | Não |
+| **MSG_036, MSG_002, MSG_005** | null | null | FAQ | null | null | FAQ| Não |
+| **MSG_003** | null | Newsletter | null | null | Newsletter | null | Não |
+| **MSG_004** | null | null | null | null | null | null | Não |
+
+## Observações 
+
+- Apenas 10 mensagens vão para a LLM, as 47 que sobram depois da limpeza são reduzidas a uma amostra.
