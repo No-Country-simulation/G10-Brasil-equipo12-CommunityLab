@@ -40,16 +40,17 @@ A tabela mostra o comportamento esperado **por mensagem**; já o pipeline atual 
 
 ## TABELA DE RESULTADOS ESPERADOS X OBTIDOS 
 
-Teste realizado pela primeira vez no dia  6/11
+Teste realizado no dia 9/11/2026. 
 
-## Tabela 1 (DEMO):
+## TABELA 1 (DEMO):
+
 | ID | Post esperado | Newsletter esperada | FAQ esperado | Post Obtido | Newsletter Obtida | FAQ Obtido | Diverge? |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **DEMO 01** | Post LinkedIn | Newsletter | null | Post LinkedIn | Newsletter | null | Não |
 | **DEMO 02** | null | null | FAQ | null | null | FAQ | Não |
 | **DEMO 03** | null | Newsletter | null | null | Newsletter | null | Não |
-| **DEMO 04** | null | null | null | null | null | null | Não (descartada na limpeza) |
-| **DEMO 05** | null | null | null | null | null | null | Não (descartada na limpeza) |
+| **DEMO 04** | lote vazio | lote vazio | lote vazio | lote vazio | lote vazio | lote vazio | Não |
+| **DEMO 05** | null | null | FAQ | null | null | FAQ | Não |
 | **DEMO 06** | null | null | null | null | null | null | Não (decisão 12, PR #52) |
 | **DEMO 07** | null | null | FAQ | null | null | FAQ | Não |
 | **DEMO 08** | null | null | null | null | null | null | Não |
@@ -58,14 +59,14 @@ Teste realizado pela primeira vez no dia  6/11
 
 ## Observações
 
-- O sistema retorna uma sugestão de FAQ para cada lote processado (conforme a decisão 4 em regras_roteamento.md). Nesse teste cada linha exibe o resultado da mensagem avaliada isoladamente. 
+- Cada DEMO foi testado individualmente, nesse caso DEMO 04 da erro de lote vazio e a DEMO 05 que seria duplicata da DEMO 02 segue como uma dúvida comum! No teste realizado como lote elas foram descartadas com a limpeza! 
 
-### Tabela 2 (dataset 50):
+### TABELA 2 (DATASET DE 50):
 
 | ID | Post esperado | Newsletter esperada | FAQ esperado | Post Obtido | Newsletter Obtida | FAQ Obtido | Diverge? |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **MSG_001, MSG_037, MSG_006, MSG_010, MSG_016** | Post LinkedIn | Newsletter | null | Post LinkedIn | Newsletter | null | Não |
-| **MSG_036, MSG_002, MSG_005** | null | null | "Dica Rápida: conectar a API da Groq no OCI sem erro de autenticação" | null | null | "Dica Rápida: conectar a API da Groq no OCI sem erro de autenticação" | Não |
+| **MSG_036, MSG_002, MSG_005** | null | null | FAQ | null | null | FAQ| Não |
 | **MSG_003** | null | Newsletter | null | null | Newsletter | null | Não |
 | **MSG_004** | null | null | null | null | null | null | Não |
 
