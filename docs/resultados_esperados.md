@@ -42,7 +42,10 @@ A tabela mostra o comportamento esperado **por mensagem**; já o pipeline atual 
 
 ## TABELA DE RESULTADOS ESPERADOS X OBTIDOS 
 
-Teste realizado no dia 9/11/2026. 
+Teste realizado no dia 9/11/2026.
+
+Como foi feito: cada caso da Tabela 1 foi processado sozinho (uma mensagem por arquivo), sem `--oci`, com `python -m src.pipeline <arquivo> --periodo Semana_Teste`. A Tabela 2 usa o lote completo de `dados/dataset_simulado.json` (50 mensagens), em uma execução. Em ambas, o resultado obtido foi comparado com o gabarito da tabela acima.
+
 
 ## TABELA 1 (DEMO):
 
@@ -61,17 +64,19 @@ Teste realizado no dia 9/11/2026.
 
 ## Observações
 
-- Cada DEMO foi testado individualmente, nesse caso DEMO 04 da erro de lote vazio e a DEMO 05 que seria duplicata da DEMO 02 segue como uma dúvida comum! No teste realizado como lote elas foram descartadas com a limpeza! 
+- O pipeline devolve uma única sugestão de FAQ por lote (decisão 4 de regras_roteamento.md). Por isso a Tabela 1 testa uma mensagem de cada vez: assim vemos o que cada uma geraria. Num lote com várias dúvidas, só um tema vira FAQ.
+
+- DEMO_04 (mensagem vazia): sozinha, gera o erro de lote vazio. DEMO_05 (repetida da DEMO_02): sozinha, é uma dúvida comum e gera FAQ. No gabarito da tabela de cima ela aparece como null porque, num lote, a repetida é descartada na limpeza. Por isso "Diverge?" é "Não": a diferença é de método (mensagem sozinha x lote), não do motor.
 
 ### TABELA 2 (DATASET DE 50):
 
 | ID | Post esperado | Newsletter esperada | FAQ esperado | Post Obtido | Newsletter Obtida | FAQ Obtido | Diverge? |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **MSG_001, MSG_037, MSG_006, MSG_010, MSG_016** | Post LinkedIn | Newsletter | null | Post LinkedIn | Newsletter | null | Não |
-| **MSG_036, MSG_002, MSG_005** | null | null | FAQ | null | null | FAQ| Não |
+| **MSG_036, MSG_002, MSG_005** | null | null | FAQ | null | null | FAQ | Não |
 | **MSG_003** | null | Newsletter | null | null | Newsletter | null | Não |
 | **MSG_004** | null | null | null | null | null | null | Não |
 
 ## Observações 
 
-- Apenas 10 mensagens vão para a LLM, as 47 que sobram depois da limpeza são reduzidas a uma amostra.
+- Cada linha agrupa as mensagens da amostra que levam ao ativo indicado. O lote gera um único post, uma única newsletter e uma única FAQ. As mensagens que não aparecem na tabela ficaram fora da amostra de 10.
