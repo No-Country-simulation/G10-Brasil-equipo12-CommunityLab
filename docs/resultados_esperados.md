@@ -19,7 +19,7 @@ A tabela mostra o comportamento esperado **por mensagem**; já o pipeline atual 
 | **DEMO_03** | *"O material da Sprint 1 ficou excelente, mas a parte de JSON poderia ter mais exemplos."* | `feedback` | Positivo | Feedback, Material de Estudo, Sprint 1 | Média | Registrar a sugestão de mais exemplos de JSON. | null | Item de newsletter | null |
 | **DEMO_04** | *(mensagem vazia)* | `pergunta_tecnica` | Não se aplica | Não se aplica | Não se aplica | Descartada na limpeza. | null | null | null |
 | **DEMO_05** | *Mesmo texto da DEMO_02 (repetida)* | `pergunta_tecnica` | Negativo | API Groq, OCI, Autenticação | Não se aplica | Contar uma só vez. Descartada na limpeza (mantém a primeira ocorrência). | null | null | null |
-| **DEMO_06** | *"Gente meu projetooo deu error na execução e nao consig rdodar o script"* | `pergunta_tecnica` | Negativo | Erro de execução, Script | Média | Encaminhar para a mentoria pedir mais detalhes. | null | null | null |
+| **DEMO_06** | *"Gente meu projetooo deu error na execução e nao consig rdodar o script"* | `pergunta_tecnica` | Negativo | Erro de execução, Script | Média | Encaminhar para a mentoria. | null | null | FAQ |
 | **DEMO_07** | *"vc6 sabem pq o OCI da erro 500 qd rodo o script??? ... 🛑😭"* | `pergunta_tecnica` | Negativo | OCI, Erro 500, Python | Média | Encaminhar para a mentoria de infraestrutura e criar FAQ sobre OCI. | null | null | FAQ |
 | **DEMO_08** | *"Achei legal o encontro de hoje."* | `feedback` | Positivo | Feedback, Eventos | Baixa | Armazenar nas métricas gerais de engajamento. | null | null | null |
 | **DEMO_09** | *"Pessoal, consegui finalizar meu primeiro projeto de análise de dados usando Python e pandas! ..."* | `depoimento` | Positivo | Python, Pandas, Análise de Dados, GitHub | Alta | Destacar no canal de vitórias e sugerir publicação do projeto no LinkedIn. | post de LinkedIn | Destaque da semana | null |
@@ -43,7 +43,11 @@ A tabela mostra o comportamento esperado **por mensagem**; já o pipeline atual 
 ## TABELA DE RESULTADOS ESPERADOS X OBTIDOS 
 
 Teste realizado no dia 9/11/2026.
-Como foi feito: cada caso da Tabela 1 foi processado sozinho (uma mensagem por arquivo), sem --oci, com python -m src.pipeline <arquivo> --periodo Semana_Teste. A Tabela 2 usa o lote completo de dados/dataset_simulado.json (50 mensagens), em uma execução. Em ambas, o resultado obtido foi comparado com o gabarito da tabela acima.
+
+Como foi feito: cada caso da Tabela 1 foi processado sozinho (uma mensagem por arquivo), sem `--oci`, com
+`python -m src.pipeline <arquivo> --periodo Semana_Teste`. 
+
+A Tabela 2 usa o lote completo de `dados/dataset_simulado.json` (50 mensagens), em uma execução. Em ambas, o resultado obtido foi comparado com o gabarito da tabela acima.
 
 ## TABELA 1 (DEMO):
 
