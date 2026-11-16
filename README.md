@@ -79,7 +79,7 @@ O código-fonte do fluxo está em [`docs/evidencias/fluxo_esteira.mmd`](docs/evi
 | 4 | Roteamento e resumo | O código roteia pelo tipo da mensagem: antes da LLM, pede só os ativos que têm material; depois, descarta o ativo sem mensagem do tipo certo e o post ou a newsletter que cita quem só fez pergunta técnica ou conversa geral. Também monta a contagem e o bloco da OCI | `src/roteamento.py`, `src/prompts.py`, `src/schemas.py` (`montar_resposta`) | ✅ Pronto |
 | 5 | Geração de ativos | Gera post de LinkedIn, destaque de newsletter e sugestão de FAQ, cada um com o tom do canal (`null` quando não há material) | Mesma chamada da etapa 3 | ✅ Pronto |
 | 6 | Curadoria e aprovação | Uma pessoa edita, aprova ou reprova cada texto na interface | `interface_streamlit.py`, `src/interface_logica.py` | ✅ Pronto (a decisão fica salva em `saida/`; não envia nada à OCI) |
-| 7 | Armazenamento | Salva o pacote final no bucket da OCI | `src/oracle_storage.py`, `src/pipeline.py` (opção `--oci`) | ✅ Ligado ao pipeline e testado com upload real (confirmado no console em 27/10/2026) |
+| 7 | Armazenamento | Salva o pacote final e o relatório da semana no bucket da OCI | `src/oracle_storage.py`, `src/relatorio.py`, `src/pipeline.py` (opção `--oci`) | ✅ Ligado ao pipeline e testado com upload real (confirmado no console em 27/10/2026) |
 
 O formato de dados (entrada e saída) está definido em um só lugar, `src/schemas.py`, e todos os módulos usam esses modelos. A resposta da LLM é validada em `src/validacao.py`, **sem valores de segurança falsos**: se a LLM responder fora do formato, o erro é informado em vez de gerar conteúdo inventado com `status: "sucesso"`.
 
@@ -98,7 +98,7 @@ O formato de dados (entrada e saída) está definido em um só lugar, `src/schem
 - **Depois da LLM:** uma segunda checagem em código descarta (deixa `null`) o ativo que a LLM devolveu sem mensagem do tipo certo no lote, e o post ou a newsletter que cita o nome (completo ou o primeiro nome) de quem só fez pergunta técnica ou conversa geral. Todo descarte vai para o log, sem o nome da pessoa. Se dois autores têm o mesmo primeiro nome e um deles tem depoimento, entrega ou feedback, só o nome completo do outro é bloqueado.
 - **A relevância e o sentimento não decidem a rota.** A pontuação só escolhe a amostra. O sentimento só existe depois da LLM e vale para o lote inteiro, por isso aparece no resumo da comunidade e não define o ativo.
 - **Dúvida recorrente:** qualquer `pergunta_tecnica` pode gerar FAQ. O motor ainda não mede recorrência, e isso fica como evolução futura.
-- **Privacidade:** nas mensagens de conversa geral, o autor é trocado por "Participante" antes de a amostra ir à LLM. O nome de uma pessoa em conteúdo público só pode ser usado com a **autorização dela**, para o primeiro nome e para o nome completo. O código **não verifica** autorização: a conferência é feita por uma pessoa na curadoria. Os dados deste repositório são simulados.
+- **Privacidade:** nas mensagens de conversa geral, o autor é trocado por "Participante" antes de a amostra ir à LLM. O nome de uma pessoa em conteúdo público só pode ser usado com a **autorização dela**, para o primeiro nome e para o nome completo. O código **não verifica** autorização: a conferência é feita por uma pessoa na curadoria. Os dados deste repositório são simulados. Antes de usar a ferramenta com dados reais, leia [`docs/dados_reais_e_privacidade.md`](docs/dados_reais_e_privacidade.md).
 - **Limite:** o código olha só o tipo. Uma mensagem vaga (por exemplo, "Achei legal o encontro de hoje") e um relato de dificuldade marcado como `depoimento` ou `feedback` continuam dependendo das regras do prompt.
 
 **Limite de tamanho:** no plano gratuito da Groq, o modelo atual aceita 8.000 tokens por minuto (limite informado pelo erro 413 de 29/10/2026). Como os guias com exemplos ocupam boa parte disso, o pipeline envia à LLM no máximo **10 mensagens**, escolhidas por relevância e tipo (5 relatos, 3 dúvidas e 2 outras). O `total_interacoes_processadas` continua sendo o do lote inteiro, mas o sentimento e os tópicos refletem a amostra. A opção `--limite` muda o valor. Quando o lote só pode gerar alguns ativos, o prompt também fica menor, porque leva só os guias deles.
@@ -289,7 +289,7 @@ Na própria página, escolha um dos exemplos de demonstração (Conquistas da co
 **Passo 2 (pronto):** editar, aprovar ou reprovar cada texto.
 
 - Antes de decidir, a pessoa escreve o **próprio nome** no topo da revisão (e aperta Enter). Sem nome, ao clicar em Aprovar ou Reprovar a tela explica o que fazer.
-- **Limite desta versão (MVP):** o nome é **declarado, sem login**. A tela não confirma quem é a pessoa, e qualquer texto é aceito. Por isso o registro mostra quem **disse** ter revisado, não quem foi autenticado. A evolução prevista é um **login**, que passa a ser a trava de segurança: o registro de quem criou, aprovou e publicou cada conteúdo ficaria fiel à pessoa autenticada. Sem login, não há como garantir autoria; com dados reais, esse passo deve ser feito antes de usar a ferramenta (ver o documento de dados reais e privacidade, quando existir).
+- **Limite desta versão (MVP):** o nome é **declarado, sem login**. A tela não confirma quem é a pessoa, e qualquer texto é aceito. Por isso o registro mostra quem **disse** ter revisado, não quem foi autenticado. A evolução prevista é um **login**, que passa a ser a trava de segurança: o registro de quem criou, aprovou e publicou cada conteúdo ficaria fiel à pessoa autenticada. Sem login, não há como garantir autoria; com dados reais, esse passo deve ser feito antes de usar a ferramenta (veja [`docs/dados_reais_e_privacidade.md`](docs/dados_reais_e_privacidade.md)).
 - Os textos (título e texto do post, chamada e resumo da newsletter, tema e origem da FAQ) podem ser corrigidos na própria tela. Se a pessoa mudar um texto **depois** de aprovar, a aprovação deixa de valer e é preciso aprovar de novo.
 - **Aprovar** abre uma janela com as pessoas citadas no texto e duas confirmações obrigatórias: que os fatos foram conferidos com as mensagens e que há **autorização** de quem aparece com nome. A lista de pessoas é só um auxílio: o código não verifica autorização (ver `docs/regras_roteamento.md`, decisão 10).
 - **Quem não autorizou o nome:** em “Alguém não autorizou a divulgação do nome?”, a pessoa marca quem não autorizou antes de gerar. O nome dessa pessoa é trocado por “uma pessoa da comunidade” (e “outra pessoa da comunidade”, “uma terceira...”, para as histórias não se misturarem) **antes de o lote ir à Groq**, e a tela avisa o que foi trocado. Quem só fez pergunta ou conversa geral fica como “Participante”. O nome completo é trocado em todas as mensagens; o primeiro nome também, a menos que outra pessoa do lote tenha o mesmo. **Isto não garante o anonimato:** apelido, cargo ou contexto ainda podem identificar alguém, e a revisão humana continua obrigatória.
@@ -302,7 +302,7 @@ A lógica fica em `src/interface_logica.py` e é testada em `tests/test_interfac
 
 ## ☁️ 11. Armazenamento na Nuvem (Oracle Cloud - OCI)
 
-Os pacotes de conteúdo gerados são salvos em um bucket do **OCI Object Storage**, na camada **Always Free**, em arquivos JSON organizados por período. Padrão de caminho do exemplo do desafio:
+Os pacotes de conteúdo gerados são salvos em um bucket do **OCI Object Storage**, na camada **Always Free**, organizados por período: o pacote em JSON e, ao lado dele, o relatório da semana em Markdown (o manual do desafio pede "textos formatados, relatórios e JSONs"). Padrão de caminho do exemplo do desafio:
 
 ```
 ativos/2026-semana-04/pacote-distribuicao.json
@@ -315,11 +315,13 @@ ativos/2026-semana-04/pacote-distribuicao.json
 3. Grava o pacote em JSON no caminho do período (`Semana_04` vira `ativos/2026-semana-04/pacote-distribuicao.json`).
 4. Devolve o bloco `armazenamento_oci` (`bucket`, `caminho_objeto` e `status`). Em caso de erro, devolve `status: falha_ao_salvar` e o tipo do erro, sem dados da configuração.
 
+**Relatório da semana (`src/relatorio.py`):** um resumo legível em Markdown, enviado ao bucket pela função `salvar_relatorio_no_oci`, ao lado do pacote (`ativos/2026-semana-04/relatorio-comunidade.md`). Traz: o período, o total de mensagens processadas (depois da limpeza), quantas a IA analisou (amostra), o sentimento predominante, os tópicos principais, a situação de cada ativo (gerado, sem material ou sem texto, com o motivo) e o resultado do envio do pacote. **Não traz nomes nem trechos de mensagens:** os tópicos vêm da LLM e podem citar uma pessoa, por isso qualquer tópico com o nome (completo ou primeiro nome) de um autor do lote é omitido e o relatório informa quantos foram. Uma cópia local fica em `saida/<ano>-<período>_relatorio-comunidade.md` (pasta ignorada pelo Git), mesmo sem `--oci`. Se o envio do relatório falhar, o pacote não é afetado: o `armazenamento_oci` continua sendo o status do pacote, e a falha do relatório aparece no log.
+
 **Variáveis opcionais** no `.env` (valores padrão entre parênteses): `OCI_BUCKET` (`communitylab-ativos-marketing`), `OCI_CONFIG_FILE` (`~/.oci/config`) e `OCI_PROFILE` (`DEFAULT`).
 
 **Autenticação:** o passo a passo para configurar a OCI na sua máquina, sem expor chaves, está em [`docs/guia-autenticacao-oci.md`](docs/guia-autenticacao-oci.md).
 
-**No pipeline:** `processar_lote(lote, salvar_oci=True)` (ou `python -m src.pipeline --oci`) chama `salvar_no_oci` e coloca o resultado em `armazenamento_oci`. O arquivo enviado ao bucket é o pacote sem esse bloco. Se o envio falhar, a análise não se perde: o motivo aparece no próprio bloco (`status: falha_ao_salvar`).
+**No pipeline:** `processar_lote(lote, salvar_oci=True)` (ou `python -m src.pipeline --oci`) chama `salvar_no_oci` e coloca o resultado em `armazenamento_oci`. O arquivo enviado ao bucket é o pacote sem esse bloco; o relatório da semana vai junto. Se o envio falhar, a análise não se perde: o motivo aparece no próprio bloco (`status: falha_ao_salvar`).
 
 > **Cuidado:** enviar sobrescreve o objeto do período. Por isso o envio só acontece com `--oci` (ou `salvar_oci=True`), e os testes devem usar um período de teste (`--periodo Semana_Teste`), nunca `Semana_04`.
 
@@ -329,10 +331,13 @@ ativos/2026-semana-04/pacote-distribuicao.json
 communitylab-ativos-marketing/   (bucket)
 └── ativos/
     └── {ano}-{periodo}/         (ex.: 2026-semana-teste)
-        └── pacote-distribuicao.json
+        ├── pacote-distribuicao.json
+        └── relatorio-comunidade.md
 ```
 
 **Situação:** a função `salvar_no_oci` foi testada com upload real no bucket, e o pipeline completo também, com o comando `python -m src.pipeline dados/caso_proposta_estagio.json --oci --periodo Semana_Teste`. O teste usou um período de teste, então não sobrescreveu o pacote de nenhuma semana real.
+
+**Relatório da semana, o que falta confirmar:** o envio do relatório foi testado com um cliente simulado (testes automáticos), mas **ainda não com upload real**. Para fechar a evidência, rode `python -m src.pipeline dados/caso_proposta_estagio.json --oci --periodo Semana_Teste`, confira no console da OCI que `relatorio-comunidade.md` aparece ao lado do pacote e guarde uma captura em `docs/evidencias/`, sem namespace nem OCIDs.
 
 **Evidência:** a captura do console mostra o objeto `ativos/2026-semana-teste/pacote-distribuicao.json` (1,43 KiB, modificado em 07/11/2026, 19:13 UTC): [`docs/evidencias/oci_bucket_2026-semana-teste.png`](docs/evidencias/oci_bucket_2026-semana-teste.png). A imagem não mostra namespace, OCIDs nem configuração da conta. Como o objeto de um mesmo período é sobrescrito a cada envio, a captura mostra a execução mais recente.
 
@@ -397,7 +402,7 @@ Na pasta raiz do projeto:
 python -m src.pipeline
 ```
 
-O comando lê `dados/mensagens_exemplo.json`, valida, faz a limpeza, envia para a Groq (modelo `openai/gpt-oss-120b`), valida a resposta, imprime o JSON final e grava uma cópia na pasta `saida/` (ignorada pelo Git). Ele **não** envia nada para a OCI, a menos que você use `--oci`.
+O comando lê `dados/mensagens_exemplo.json`, valida, faz a limpeza, envia para a Groq (modelo `openai/gpt-oss-120b`), valida a resposta, imprime o JSON final e grava uma cópia na pasta `saida/` (ignorada pelo Git), com o relatório da semana em Markdown. Ele **não** envia nada para a OCI, a menos que você use `--oci`.
 
 Outros usos:
 
@@ -448,6 +453,7 @@ python -m unittest discover -s tests -t . -v
 | `tests/test_roteamento.py` | Segunda checagem depois da LLM: descarta o ativo sem mensagem do tipo certo e o post ou a newsletter que cita quem só fez pergunta ou conversa geral (nome completo ou primeiro nome, sem casar parte de outra palavra); não confere a seção da newsletter nem a origem do FAQ; o log não traz nome de pessoa; funciona dentro do pipeline com um cliente falso |
 | `tests/test_ramificacoes.py` | Roteamento antes da LLM: a rota de cada tipo, os ativos com material do lote, o prompt só com os ativos pedidos (instruções, formato de saída e guias) em todas as combinações e o pipeline com um cliente falso (só dúvidas, só conquistas, só feedback, só conversa geral) |
 | `tests/test_pipeline_saida.py` | A saída do terminal não quebra com emojis quando é redirecionada (Windows) |
+| `tests/test_relatorio.py` | O relatório da semana: traz os campos combinados, omite tópicos que citam autores, não tem nomes nem trechos de mensagens, avisa quando a IA viu só uma amostra, e vai ao bucket ao lado do pacote (com cliente OCI simulado) |
 
 Resultado esperado: `Ran N tests ... OK` (N cresce a cada sprint; o que importa é terminar com `OK`). Testes que dependem da Groq ou da OCI reais continuam sendo manuais (passos 7 e 8).
 
