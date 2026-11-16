@@ -110,7 +110,7 @@ Nova rodada completa executada após a inclusão dos exemplos *few-shot* nos gui
 
 ### 4.3. Pontos Verificados e Corretos
 
-1. **Fidelidade objetiva:** Nenhum nome de pessoa inexistente, cargo, empresa contratante ou número/métrica foi inventado nos **26 textos** auditados(com exceção da ocorrência identificada na MSG_039).
+1. **Fidelidade objetiva:** Nenhum nome de pessoa inexistente, cargo, empresa contratante ou número/métrica foi inventado nos **26 textos** auditados. (Ressalva: na \MSG_039`, o nome de usuário `Nathan_Silva` foi escrito como "Nathan Silva" (seção 4.4, item 4)).
 2. **Conquistas sem aumento (Casos críticos):**
    - **Gustavo Prado (`MSG_010`):** mantido como **proposta de estágio** tanto no lote completo (post e newsletter) quanto na execução individual.
    - **Lorena Matos (`MSG_037`):** mantida como **segunda etapa do processo seletivo** tanto na newsletter do lote completo quanto no post e na newsletter da execução individual.
