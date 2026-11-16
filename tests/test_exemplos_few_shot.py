@@ -79,6 +79,33 @@ class TestExemplosFewShot(unittest.TestCase):
         self.assertIn("repita as palavras dela", guia)
         self.assertIn("foi o assunto principal da entrevista", guia)
 
+    def test_guias_trazem_a_regra_de_linguagem_sem_marca_de_genero(self):
+        for canal in ("linkedin", "newsletter"):
+            with self.subTest(canal=canal):
+                guia = carregar_guia_prompt(canal)
+                self.assertIn("Linguagem sem marca de gênero", guia)
+                self.assertIn("Não deduza o gênero de ninguém pelo nome", guia)
+                self.assertIn("só quando a própria mensagem da pessoa a mostra", guia)
+                self.assertIn('Escreva **"Dev"**', guia)  # nome omitido: o cargo perde a marca de gênero
+                self.assertIn('escreva **somente** "Parabéns!"', guia)
+
+    def test_exemplo_de_nome_omitido_nao_tem_marca_de_genero(self):
+        # O exemplo com "uma pessoa da comunidade" não pode usar ele/ela, aprovado/aprovada nem cargo no feminino
+        marcas = re.compile(r"\b(ele|ela|aprovad[oa]|aluno|aluna|desenvolvedora|desenvolvedor)\b", re.I)
+        for canal in ("linkedin", "newsletter"):
+            with self.subTest(canal=canal):
+                blocos = [b for b in _blocos_json(carregar_guia_prompt(canal)) if "uma pessoa da" in json.dumps(b, ensure_ascii=False).lower()]
+                self.assertEqual(len(blocos), 1)
+                texto = json.dumps(blocos[0], ensure_ascii=False)
+                self.assertIsNone(marcas.search(texto), texto)
+
+    def test_felicitacoes_dos_exemplos_nao_usam_masculino_generico(self):
+        for canal in ("linkedin", "newsletter"):
+            texto = json.dumps(_blocos_json(carregar_guia_prompt(canal)), ensure_ascii=False)
+            for expressao in ("a todos", "aos dois", "aos ambos"):
+                with self.subTest(canal=canal, expressao=expressao):
+                    self.assertNotIn(expressao, texto.lower())
+
 
 if __name__ == "__main__":
     unittest.main()

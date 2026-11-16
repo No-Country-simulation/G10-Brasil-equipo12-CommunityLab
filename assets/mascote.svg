@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="512" height="512" role="img" aria-label="Mascote da Pauta IA: um balão de fala de folha de caderno pautada, amarelo, com carinha sorridente">
+  <!-- espirais do caderno -->
+  <g fill="#1D4ED8" stroke="#111111" stroke-width="3.5" stroke-linejoin="round">
+    <rect x="52" y="12" width="14" height="30" rx="7"/>
+    <rect x="93" y="12" width="14" height="30" rx="7"/>
+    <rect x="134" y="12" width="14" height="30" rx="7"/>
+  </g>
+  <!-- balão de fala = folha de caderno -->
+  <path d="M46 30 H154 Q182 30 182 58 V118 Q182 146 154 146 H104 L62 184 L68 146 H46 Q18 146 18 118 V58 Q18 30 46 30 Z"
+        fill="#FFD966" stroke="#111111" stroke-width="6" stroke-linejoin="round"/>
+  <!-- pauta: margem e linhas -->
+  <g stroke="#6F93E6" stroke-width="2.5" stroke-linecap="round">
+    <line x1="40" y1="46" x2="40" y2="130"/>
+    <line x1="54" y1="56" x2="168" y2="56"/>
+    <line x1="54" y1="130" x2="168" y2="130"/>
+  </g>
+  <!-- carinha -->
+  <circle cx="82" cy="86" r="8" fill="#111111"/>
+  <circle cx="120" cy="86" r="8" fill="#111111"/>
+  <circle cx="85" cy="83" r="2.6" fill="#FFFFFF"/>
+  <circle cx="123" cy="83" r="2.6" fill="#FFFFFF"/>
+  <ellipse cx="66" cy="104" rx="8" ry="5" fill="#F4A58A" opacity="0.75"/>
+  <ellipse cx="138" cy="104" rx="8" ry="5" fill="#F4A58A" opacity="0.75"/>
+  <path d="M86 104 Q101 120 116 104" fill="none" stroke="#111111" stroke-width="5.5" stroke-linecap="round"/>
+</svg>

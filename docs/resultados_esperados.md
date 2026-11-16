@@ -35,6 +35,8 @@ A tabela mostra o comportamento esperado **por mensagem**; já o pipeline atual 
 
 - **DEMO_09 — nuance de sentimento:** o caso relata conquista ("consegui finalizar") mas também dificuldades ("tive bastante dificuldade"). Foi classificado como `Positivo` (e não `Altamente Positivo`) para diferenciar do DEMO_01, que é comemoração pura. Decisão sujeita a ajuste do time.
 - **DEMO_10 — múltiplos tópicos:** primeiro caso com 4 tópicos específicos em mensagem longa; bom teste para verificar se o motor extrai múltiplos tópicos (casos anteriores eram mais curtos).
+- **DEMO_06 — vaga, sem FAQ:** a mensagem ("deu error", "não consig rdodar o script") não diz ferramenta, erro nem contexto, então o esperado é FAQ `null`. Decisão 12 de [`regras_roteamento.md`](regras_roteamento.md), com reexecução em 09/11/2026 (duas execuções, FAQ `null` nas duas). A mensagem continua contando no total e no sentimento.
+- **FAQ por mensagem × FAQ por lote:** a coluna "FAQ esperado" diz se a mensagem tem material para um FAQ, mas o contrato devolve **uma** sugestão de FAQ por lote (decisão 4 de `regras_roteamento.md`). Num lote com várias dúvidas, a LLM escolhe uma delas. Por isso o `DEMO_06` foi testado sozinho.
 - **DEMO_03 — relevância:** o gabarito indica `Média` (feedback detalhado), mas o motor hoje devolve `Baixa`, porque feedback pontua 10. É uma divergência conhecida, listada em "Pontos em aberto" da [régua de relevância](regua_relevancia.md), e não afeta a rota (feedback gera newsletter).
 
 

@@ -1,0 +1,16 @@
+graph TD
+    U["Interface (Streamlit): quem não autorizou o nome é trocado antes do envio à LLM"] -.->|"só na interface"| A
+    A["Entrada: lote JSON ou CSV"] --> B["Ingestão: valida o formato (contrato em schemas.py)"]
+    B --> C["Limpeza: remove mensagens vazias e duplicadas e padroniza o texto"]
+    C --> S["Seleção da amostra: até 10 mensagens, por relevância e tipo"]
+    S --> T["Roteamento por tipo: pede à LLM só os ativos que têm material"]
+    T --> D["Análise com LLM (Groq): sentimento, tópicos e ativos"]
+    D --> E{"Resposta no formato?"}
+    E -->|Sim| K["Checagem do código: descarta ativo sem mensagem do tipo certo e nome protegido"]
+    K --> F["Montagem: contagem e bloco da OCI feitos pelo código"]
+    E -->|Não| R{"Restam tentativas? (máximo 3)"}
+    R -->|Sim| D
+    R -->|Não| X["Erro claro para quem chamou"]
+    F --> G["Cópia local em saida/"]
+    F --> H["OCI Object Storage (opção --oci)"]
+    F -.-> I["Curadoria humana (Streamlit): revisar, editar, aprovar ou reprovar; a pessoa publica com o próprio login"]
