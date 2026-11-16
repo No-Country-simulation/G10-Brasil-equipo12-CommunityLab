@@ -46,7 +46,6 @@ Teste realizado no dia 9/11/2026.
 
 Como foi feito: cada caso da Tabela 1 foi processado sozinho (uma mensagem por arquivo), sem `--oci`, com `python -m src.pipeline <arquivo> --periodo Semana_Teste`. A Tabela 2 usa o lote completo de `dados/dataset_simulado.json` (50 mensagens), em uma execução. Em ambas, o resultado obtido foi comparado com o gabarito da tabela acima.
 
-A Tabela 2 usa o lote completo de `dados/dataset_simulado.json` (50 mensagens), em uma execução. Em ambas, o resultado obtido foi comparado com o gabarito da tabela acima.
 
 ## TABELA 1 (DEMO):
 
