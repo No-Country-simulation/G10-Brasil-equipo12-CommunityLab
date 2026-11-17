@@ -67,7 +67,7 @@ Os exemplos abaixo mostram **só o estilo e a estrutura**. Os nomes e os fatos v
 {
   "post_linkedin": {
     "titulo": "Uma proposta de estágio em dados e um primeiro freela de automação",
-    "copy": "Duas histórias da nossa comunidade. 🚀\n\nO Gustavo Prado contou que recebeu uma proposta de estágio em engenharia de dados. Segundo ele, tudo começou quando publicou no GitHub um pipeline com bucket na nuvem.\n\nO Henrique Barros contou que fechou seu primeiro freela de automação. Ele usou n8n com Webhook para ligar um formulário a uma planilha, e o cliente gostou do resultado.\n\nParabéns!\n\nQual projeto seu merece ser mostrado no GitHub? Conte nos comentários.\n\n#EngenhariaDeDados #Automação #CarreiraTech",
+    "copy": "Duas histórias da nossa comunidade. 🚀\n\nGustavo Prado contou que recebeu uma proposta de estágio em engenharia de dados. Tudo começou quando publicou no GitHub um pipeline com bucket na nuvem.\n\nHenrique Barros contou que fechou seu primeiro freela de automação, com n8n e Webhook ligando um formulário a uma planilha. O cliente adorou.\n\nParabéns!\n\nQual projeto seu merece ser mostrado no GitHub? Conte nos comentários.\n\n#EngenhariaDeDados #Automação #CarreiraTech",
     "canal_recomendado": "LinkedIn Oficial",
     "potencial_engajamento": "Alto"
   }
