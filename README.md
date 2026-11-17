@@ -371,6 +371,8 @@ python -m venv .venv
 - Windows: `.venv\Scripts\activate`
 - macOS e Linux: `source .venv/bin/activate`
 
+> **Windows, PowerShell:** se aparecer um erro dizendo que a execução de scripts está desabilitada neste sistema, libere para o seu usuário com `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`. Se o PowerShell pedir confirmação, responda com a letra de **Sim** (S no Windows em português, Y em inglês) e aperte Enter. Depois feche e abra o terminal e tente de novo. No Prompt de Comando (CMD) não é preciso configurar nada.
+
 **4. Instalar as dependências**
 
 ```bash
