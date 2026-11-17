@@ -337,9 +337,17 @@ communitylab-ativos-marketing/   (bucket)
 
 **Situação:** a função `salvar_no_oci` foi testada com upload real no bucket, e o pipeline completo também, com o comando `python -m src.pipeline dados/caso_proposta_estagio.json --oci --periodo Semana_Teste`. O teste usou um período de teste, então não sobrescreveu o pacote de nenhuma semana real.
 
-**Relatório da semana, o que falta confirmar:** o envio do relatório foi testado com um cliente simulado (testes automáticos), mas **ainda não com upload real**. Para fechar a evidência, rode `python -m src.pipeline dados/caso_proposta_estagio.json --oci --periodo Semana_Teste`, confira no console da OCI que `relatorio-comunidade.md` aparece ao lado do pacote e guarde uma captura em `docs/evidencias/`, sem namespace nem OCIDs.
+**Relatório da semana, confirmado com upload real:** em 16/11/2026 (12:10, horário de Brasília), Denilson Silva de Almeida rodou `python -m src.pipeline dados/caso_proposta_estagio.json --oci --periodo Semana_Teste`, e o console da OCI passou a mostrar `relatorio-comunidade.md` ao lado de `pacote-distribuicao.json` na mesma pasta. A captura está na evidência abaixo. O conteúdo do relatório que foi para o bucket ainda não foi relido por uma pessoa; a garantia de que ele não traz nomes de autores nem trechos de mensagens vem dos testes automáticos (`tests/test_relatorio.py`).
 
-**Evidência:** a captura do console mostra o objeto `ativos/2026-semana-teste/pacote-distribuicao.json` (1,43 KiB, modificado em 07/11/2026, 19:13 UTC): [`docs/evidencias/oci_bucket_2026-semana-teste.png`](docs/evidencias/oci_bucket_2026-semana-teste.png). A imagem não mostra namespace, OCIDs nem configuração da conta. Como o objeto de um mesmo período é sobrescrito a cada envio, a captura mostra a execução mais recente.
+**Evidência:** a captura mais recente do console, de 16/11/2026 (15:10 UTC), mostra os dois objetos da pasta `ativos/2026-semana-teste/`: `pacote-distribuicao.json` (1,56 KiB) e `relatorio-comunidade.md` (1,14 KiB): [`docs/evidencias/oci_bucket_2026-semana-teste_com_relatorio.png`](docs/evidencias/oci_bucket_2026-semana-teste_com_relatorio.png). As imagens não mostram namespace, OCIDs nem configuração da conta. Como o objeto de um mesmo período é sobrescrito a cada envio, cada captura mostra a execução da sua data.
+
+**Histórico de capturas do bucket:**
+
+| Data (UTC) | Pasta no bucket | O que mostra | Arquivo |
+| :--- | :--- | :--- | :--- |
+| 07/11/2026, 19:13 | `ativos/2026-semana-teste/` | só o pacote (1,43 KiB), antes do relatório existir | [`oci_bucket_2026-semana-teste.png`](docs/evidencias/oci_bucket_2026-semana-teste.png) |
+| 12/11/2026, 19:11 | `ativos/2026-semana-demo/` | só o pacote (1,5 KiB), antes do relatório existir | [`oci_bucket_2026-semana-demo.png`](docs/evidencias/oci_bucket_2026-semana-demo.png) |
+| 16/11/2026, 15:10 | `ativos/2026-semana-teste/` | pacote e relatório | [`oci_bucket_2026-semana-teste_com_relatorio.png`](docs/evidencias/oci_bucket_2026-semana-teste_com_relatorio.png) |
 
 **Relatório da execução completa:** [`docs/evidencias/relatorio_execucao_oci.md`](docs/evidencias/relatorio_execucao_oci.md) traz o comando executado e a saída do terminal da execução de 07/11/2026, feita por Denilson Silva de Almeida.
 
