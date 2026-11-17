@@ -6,7 +6,7 @@ Este documento mostra três transformações reais feitas pelo motor: mensagens 
 
 > **Dados simulados.** Cada exemplo tem um arquivo de entrada próprio e congelado em `dados/` ([`caso_conquista.json`](../dados/caso_conquista.json), [`caso_proposta_estagio.json`](../dados/caso_proposta_estagio.json) e [`caso_duvida_tecnica.json`](../dados/caso_duvida_tecnica.json)). Nomes e relatos são fictícios (veja [`dataset_simulado.md`](dataset_simulado.md)), e os textos gerados não devem ser publicados como se fossem fatos reais.
 >
-> **Saídas reais, não editadas.** Foram geradas em 09/11/2026, com a versão `53d1396` da branch `main` e o modelo `openai/gpt-oss-120b` (Groq), pelo comando `python -m src.pipeline`, **sem** `--oci` (por isso `armazenamento_oci.status` ficou `pendente_upload` nos três). A LLM varia entre execuções: uma nova execução pode gerar textos diferentes. Por isso existe a etapa de curadoria humana antes de publicar.
+> **Saídas reais, não editadas.** Foram geradas em 16 e 17/11/2026, com o modelo `openai/gpt-oss-120b` (Groq), pelo comando `python -m src.pipeline`, **sem** `--oci` (por isso `armazenamento_oci.status` ficou `pendente_upload` nos três). Os exemplos 1 e 2 vieram da branch `fix/exemplo-linkedin-linguagem-neutra` (commit `f76d020`, PR #71), que corrige o guia do LinkedIn; o exemplo 3 veio da `main` no commit `63e3fcd` (nesse lote só o FAQ é pedido, então o guia do LinkedIn nem é usado). A LLM varia entre execuções: uma nova execução pode gerar textos diferentes. Por isso existe a etapa de curadoria humana antes de publicar. A seção "Como estas saídas foram obtidas", no fim, conta quantas execuções foram feitas.
 >
 > **Entradas congeladas.** O teste [`tests/test_exemplos_demo.py`](../tests/test_exemplos_demo.py) garante que cada arquivo de entrada continua com os mesmos textos e o mesmo roteamento esperado. Se alguém alterar uma entrada, o teste falha e este documento precisa ser regenerado.
 
@@ -21,22 +21,22 @@ Este documento mostra três transformações reais feitas pelo motor: mensagens 
 | Mariana Souza | `#conquistas-e-vagas` | `depoimento` | Pessoal, passei no processo seletivo para Desenvolvedora Júnior de IA! O projeto do curso de LangChain e OCI que construí no portfólio fez toda a diferença na entrevista técnica. |
 | Rafael Lima | `#projetos-alunos` | `entrega_projeto` | Concluí o deploy do meu assistente inteligente usando Streamlit Cloud e ChromaDB. Deixei o link no repositório do GitHub para quem quiser testar. |
 
-**Análise do lote:** sentimento predominante `Altamente Positivo`; tópicos: Processo Seletivo, Deploy de Projeto.
+**Análise do lote:** sentimento predominante `Altamente Positivo`; tópicos: processo seletivo, deploy de assistente inteligente, LangChain e OCI.
 
 **Ativo 1: `post_linkedin`**
 
-- **Título:** Mariana aprovada em processo seletivo para Desenvolvedora Júnior de IA e Rafael conclui deploy de assistente inteligente
+- **Título:** Mariana passa em processo seletivo para Desenvolvedora Júnior de IA e Rafael conclui deploy de assistente inteligente
 - **Copy:**
 
-  > Duas conquistas da comunidade ONE G10. 🚀
+  > A Mariana Souza passou no processo seletivo para Desenvolvedora Júnior de IA. 🎉
   >
-  > Mariana Souza foi aprovada no processo seletivo para Desenvolvedora Júnior de IA. Ela destacou que o projeto de LangChain e OCI do portfólio fez toda a diferença na entrevista técnica.
+  > Ela contou que o projeto do curso de LangChain e OCI que construiu no portfólio fez toda a diferença na entrevista técnica.
   >
-  > Rafael Lima concluiu o deploy do seu assistente inteligente usando Streamlit Cloud e ChromaDB, disponibilizando o link no GitHub para testes.
+  > Rafael Lima concluiu o deploy do seu assistente inteligente usando Streamlit Cloud e ChromaDB, deixando o link no repositório do GitHub para quem quiser testar.
   >
-  > Parabéns a ambos!
+  > Parabéns!
   >
-  > Qual foi a sua maior vitória esta semana? Compartilhe nos comentários.
+  > Qual projeto seu está pronto para ser mostrado? Compartilhe nos comentários.
   >
   > #CarreiraTech #LangChain #OCI #Streamlit #ChromaDB
 
@@ -45,8 +45,8 @@ Este documento mostra três transformações reais feitas pelo motor: mensagens 
 **Ativo 2: `destaque_newsletter_semanal`**
 
 - **Seção:** Vitória da Semana
-- **Chamada:** Mariana é aprovada em processo seletivo para Desenvolvedora Júnior de IA
-- **Resumo:** Mariana Souza contou que passou no processo seletivo para Desenvolvedora Júnior de IA, ressaltando que o projeto de LangChain e OCI foi decisivo na entrevista técnica. Rafael Lima também destacou a entrega do deploy do seu assistente inteligente com Streamlit Cloud e ChromaDB, disponibilizando o link no GitHub. Quer mostrar seu projeto? Compartilhe no canal #projetos-alunos.
+- **Chamada:** Mariana passa em processo seletivo para Desenvolvedora Júnior de IA
+- **Resumo:** Mariana Souza passou no processo seletivo para Desenvolvedora Júnior de IA, destacando que o projeto de LangChain e OCI foi decisivo na entrevista. Rafael Lima concluiu o deploy do assistente inteligente com Streamlit Cloud e ChromaDB, disponibilizando o link no GitHub. Quer mostrar seu projeto? Compartilhe no canal #projetos-alunos.
 
 **Ativo 3: `sugestao_conteudo_faq`:** `null`
 
@@ -63,7 +63,7 @@ Este documento mostra três transformações reais feitas pelo motor: mensagens 
 | Gustavo Prado | `#conquistas-e-vagas` | `depoimento` | Recebi uma proposta para estágio em engenharia de dados! Tudo começou quando publiquei no GitHub meu pipeline com bucket na nuvem. Vale muito mostrar o que a gente constrói. |
 | Henrique Barros | `#conquistas-e-vagas` | `depoimento` | Fechei meu primeiro freela de automação! Usei n8n com Webhook para ligar um formulário a uma planilha. O cliente adorou. |
 
-**Análise do lote:** sentimento predominante `Altamente Positivo`; tópicos: proposta de estágio, freela de automação.
+**Análise do lote:** sentimento predominante `Altamente Positivo`; tópicos: estágio em engenharia de dados, freela de automação.
 
 **Ativo 1: `post_linkedin`**
 
@@ -72,11 +72,11 @@ Este documento mostra três transformações reais feitas pelo motor: mensagens 
 
   > Duas histórias da nossa comunidade. 🚀
   >
-  > O Gustavo Prado contou que recebeu uma proposta de estágio em engenharia de dados. Segundo ele, tudo começou quando publicou no GitHub um pipeline com bucket na nuvem.
+  > Gustavo Prado contou que recebeu uma proposta de estágio em engenharia de dados. Tudo começou quando publicou no GitHub um pipeline com bucket na nuvem.
   >
-  > O Henrique Barros contou que fechou seu primeiro freela de automação. Ele usou n8n com Webhook para ligar um formulário a uma planilha, e o cliente adorou.
+  > Henrique Barros contou que fechou seu primeiro freela de automação, usando n8n com Webhook para ligar um formulário a uma planilha. O cliente adorou.
   >
-  > Parabéns aos dois!
+  > Parabéns!
   >
   > Qual projeto seu merece ser mostrado no GitHub? Conte nos comentários.
   >
@@ -88,7 +88,7 @@ Este documento mostra três transformações reais feitas pelo motor: mensagens 
 
 - **Seção:** Vitória da Semana
 - **Chamada:** Gustavo recebe proposta de estágio em engenharia de dados
-- **Resumo:** Gustavo Prado recebeu uma proposta de estágio em engenharia de dados depois de publicar no GitHub um pipeline com bucket na nuvem. Henrique Barros fechou seu primeiro freela de automação, usando n8n com Webhook para ligar um formulário a uma planilha. Compartilhe sua conquista em #conquistas-e-vagas.
+- **Resumo:** Gustavo Prado recebeu uma proposta de estágio em engenharia de dados depois de publicar no GitHub um pipeline com bucket na nuvem. Henrique Barros fechou seu primeiro freela de automação, usando n8n com Webhook para ligar um formulário a uma planilha. Quer mostrar seu projeto? Compartilhe no canal #conquistas-e-vagas.
 
 **Ativo 3: `sugestao_conteudo_faq`:** `null`
 
@@ -96,6 +96,7 @@ Este documento mostra três transformações reais feitas pelo motor: mensagens 
 
 1. **Fidelidade aos fatos:** quem *recebeu uma proposta* não aparece como contratado, e quem *fechou* um freela continua com a conquista plena. O prompt tem regras contra inflar conquistas (em testes anteriores, sem essa regra, a LLM chegou a escrever que o Gustavo "garantiu" o estágio).
 2. **Sem material, sem ativo:** como o lote não tinha nenhuma pergunta técnica, a sugestão de FAQ veio `null`, em vez de um conteúdo inventado.
+3. **Linguagem sem marca de gênero:** as mensagens do Gustavo e do Henrique não mostram gênero, e nesta execução o texto não usa "ele", "ela" nem artigo antes dos nomes. Nem sempre foi assim: veja "Como estas saídas foram obtidas".
 
 ## Exemplo 3: dúvida técnica vira sugestão de FAQ
 
@@ -107,7 +108,7 @@ Este documento mostra três transformações reais feitas pelo motor: mensagens 
 | :--- | :--- | :--- | :--- |
 | Rafael Tavares | `#duvidas-langgraph` | `pergunta_tecnica` | Alguém sabe como configurar um retry no nó condicional do LangGraph quando a LLM devolve um JSON quebrado? Estou tentando com um router, mas ele só tenta uma vez. |
 
-**Análise do lote:** sentimento predominante `Neutro`; tópicos: LangGraph, retry, JSON quebrado.
+**Análise do lote:** sentimento predominante `Neutro`; tópicos: LangGraph, retry.
 
 **Ativo gerado: `sugestao_conteudo_faq`**
 
@@ -121,6 +122,18 @@ Este documento mostra três transformações reais feitas pelo motor: mensagens 
 
 1. **Rastreabilidade:** uma dúvida recorrente vira um tópico de FAQ ligado à mensagem de origem e já encaminhado para a mentoria.
 2. **Roteamento por tipo:** uma `pergunta_tecnica` não gera post nem newsletter. Só o FAQ é preenchido.
+
+## Como estas saídas foram obtidas
+
+Para não parecer que escolhemos só o melhor resultado, aqui está o que aconteceu em cada execução. Todas foram feitas por Denilson Silva de Almeida, sem `--oci`.
+
+| Exemplo | Execuções | O que aconteceu |
+| :--- | :-: | :--- |
+| 1 | 3 | 16/11 (`63e3fcd`): o post terminou com "Parabéns a todos!", contra a regra do guia. 17/11 (`9be88b1`): dentro da regra. 17/11 (`f76d020`): dentro da regra, e é a que está acima. |
+| 2 | 5 | 16/11 (`63e3fcd`) e três execuções em 17/11 (`9be88b1`): em todas o post trouxe "Ele usou..." para o Henrique (e "Segundo ele..." para o Gustavo em três delas), sem que a mensagem mostrasse gênero. Causa: o Exemplo 2 do guia `prompts/linkedin.md` tinha essas mesmas formas, e a LLM copiava o exemplo. Depois de corrigir o guia (PR #71, commit `f76d020`), a execução seguinte, em 17/11, saiu dentro da regra e é a que está acima. |
+| 3 | 1 | 16/11 (`63e3fcd`): dentro do esperado. Entre `63e3fcd` e `9be88b1`, só mudaram README e documentos. |
+
+"Dentro da regra" quer dizer: o post usa só "Parabéns!", não usa "ele" nem "ela" para quem não mostrou gênero na própria mensagem, e não muda nenhum fato (proposta continua proposta). Os textos usados acima foram conferidos contra as mensagens originais. Isso mostra que a regra de linguagem neutra no prompt **não é uma garantia**: a revisão humana continua necessária.
 
 ## Limites conhecidos
 
