@@ -272,7 +272,7 @@ Três transformações reais, com a mensagem original, a análise e os ativos ge
 | 2 | Uma proposta de estágio (Gustavo) e um freela fechado (Henrique), em `caso_proposta_estagio.json` | Post de LinkedIn e destaque de newsletter; FAQ `null` | Fidelidade aos fatos (proposta não vira contratação) e ausência de ativo quando não há material |
 | 3 | Uma dúvida técnica (Rafael Tavares), em `caso_duvida_tecnica.json` | Sugestão de FAQ encaminhada para a mentoria; post e newsletter `null` | Dúvida recorrente vira tópico de FAQ rastreável, sem post nem newsletter |
 
-As saídas são reais (geradas em 09/11/2026) e os dados, simulados. As três entradas estão congeladas e protegidas por teste (`tests/test_exemplos_demo.py`). A LLM varia entre execuções, por isso a revisão humana antes de publicar faz parte do fluxo.
+As saídas são reais (geradas em 16 e 17/11/2026) e os dados, simulados. As três entradas estão congeladas e protegidas por teste (`tests/test_exemplos_demo.py`). A LLM varia entre execuções, por isso a revisão humana antes de publicar faz parte do fluxo.
 
 ## 🖥️ 10. Interface de Curadoria e Validação
 
@@ -337,7 +337,7 @@ communitylab-ativos-marketing/   (bucket)
 
 **Situação:** a função `salvar_no_oci` foi testada com upload real no bucket, e o pipeline completo também, com o comando `python -m src.pipeline dados/caso_proposta_estagio.json --oci --periodo Semana_Teste`. O teste usou um período de teste, então não sobrescreveu o pacote de nenhuma semana real.
 
-**Relatório da semana, confirmado com upload real:** em 16/11/2026 (12:10, horário de Brasília), Denilson Silva de Almeida rodou `python -m src.pipeline dados/caso_proposta_estagio.json --oci --periodo Semana_Teste`, e o console da OCI passou a mostrar `relatorio-comunidade.md` ao lado de `pacote-distribuicao.json` na mesma pasta. A captura está na evidência abaixo. O conteúdo do relatório que foi para o bucket ainda não foi relido por uma pessoa; a garantia de que ele não traz nomes de autores nem trechos de mensagens vem dos testes automáticos (`tests/test_relatorio.py`).
+**Relatório da semana, confirmado com upload real:** em 16/11/2026 (12:10, horário de Brasília), Denilson Silva de Almeida rodou `python -m src.pipeline dados/caso_proposta_estagio.json --oci --periodo Semana_Teste`, e o console da OCI passou a mostrar `relatorio-comunidade.md` ao lado de `pacote-distribuicao.json` na mesma pasta. A captura está na evidência abaixo. O conteúdo do relatório que foi para o bucket foi lido por uma pessoa (Denilson, em 16/11/2026) e traz só números e tópicos, sem nomes de autores nem trechos de mensagens. Isso vale para esse relatório de teste; a garantia geral vem dos testes automáticos (`tests/test_relatorio.py`).
 
 **Evidência:** a captura mais recente do console, de 16/11/2026 (15:10 UTC), mostra os dois objetos da pasta `ativos/2026-semana-teste/`: `pacote-distribuicao.json` (1,56 KiB) e `relatorio-comunidade.md` (1,14 KiB): [`docs/evidencias/oci_bucket_2026-semana-teste_com_relatorio.png`](docs/evidencias/oci_bucket_2026-semana-teste_com_relatorio.png). As imagens não mostram namespace, OCIDs nem configuração da conta. Como o objeto de um mesmo período é sobrescrito a cada envio, cada captura mostra a execução da sua data.
 
