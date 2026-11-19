@@ -22,7 +22,7 @@
 
 * **Indicação:**  Adicionar o formato esperado.
 
-* **Observação:** A mensagem exibiu `"Expecting value..."`, que é o texto cru da exceção do Python em inglês. Esse foi o único cenário testado em que o erro técnico bruto vazou diretamente para a interface sem tratamento.
+* **Observação:** A mensagem exibiu `"Expecting value..."`, que é o texto cru da exceção do Python em inglês e não diz o que a pessoa deve fazer. Os cenários 1, 2, 4, 8 e 12 também mostram texto técnico em inglês.
 
 ### 4. Arquivo `.csv` vazio (`0.0B`)
 
@@ -32,7 +32,7 @@
 
 ### 5. Arquivo de outro formato
 
-* **Comportamento:** A interface rejeita o arquivos de outros formatos.
+* **Comportamento:** A interface rejeita arquivos de outros formatos.
 
 ### 6. Falta da chave no `.env`
 
@@ -69,3 +69,15 @@
 ### 11. Arquivo `.csv` sem o período preenchido
 
 * **Comportamento:** O upload foi concluído normalmente, sem exibir mensagens de erro.
+
+* **Observação:** Isso é esperado. O CSV não carrega o período dentro do arquivo, e a leitura usa o valor padrão `Semana_Atual` (`src/ingestao.py`). Por isso não há erro: o pacote gerado fica com o período `Semana_Atual`.
+
+### 12. Lote que passa do limite de tokens da Groq
+
+* **Como foi feito:** Em 18/11/2026, um arquivo `.csv` de 4 mensagens (uma delas mais longa que as do teste anterior) foi enviado e o botão "Gerar conteúdo" foi clicado.
+
+* **O que a tela mostrou:** *"Não consegui gerar o conteúdo. Falha ao chamar a API da Groq (APIStatusError): Error code: 413 - {'error': {'message': 'Request too large for model `openai/gpt-oss-120b` ... on tokens per minute (TPM): Limit 8000, Requested 8387, please reduce your message size and try again. ...', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}"*.
+
+* **Indicação:** A mensagem técnica em inglês não diz o que a pessoa deve fazer.
+
+* **Observação:** O pedido sozinho passou do limite de 8.000 tokens por minuto que a conta tem para esse modelo, então clicar de novo não resolve. Uma alternativa é reduzir o tamanho do lote (menos mensagens ou textos mais curtos).
