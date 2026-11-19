@@ -7,6 +7,7 @@ Como abrir (na pasta raiz do projeto, com o ambiente virtual ativo):
 Esta tela NÃO envia nada ao OCI. A decisão da pessoa fica num arquivo à parte em saida/ (ignorada pelo Git). A lógica fica em src/interface_logica.py (com testes).
 A tela é de propósito simples: quem usa só escolhe as mensagens e gera o conteúdo.
 """
+import html
 import json
 from datetime import datetime
 from pathlib import Path
@@ -69,6 +70,10 @@ st.markdown(
     ".passo.opcional .num{background:#fff;color:#1D4ED8;border:2px solid #1D4ED8;}"
     ".passo b{display:block;}.passo span{font-size:.85rem;color:#555;}"
     "@media (max-width:900px){.passos{grid-template-columns:1fr 1fr;}}"
+    # resumo da comunidade: rótulo e valor juntos, com pouco espaço entre as linhas
+    ".resumo{display:grid;grid-template-columns:1fr 2fr 3fr;gap:12px;margin:0;}"
+    ".resumo .rot{font-size:.85rem;color:#6b7280;line-height:1.3;} .resumo .val{font-weight:700;line-height:1.3;}"
+    ".fino{border:0;border-top:1px solid #e6e8ee;margin:.5rem 0;}"
     "</style>",
     unsafe_allow_html=True,
 )
@@ -319,7 +324,7 @@ def _cartao(ativo, caracteres_por_linha):
             if pode:
                 _confirmar_reprovacao(chave, ativo["nome"], original, atuais, pessoas)
         if clicou and not pode:
-            st.error("Antes de decidir, escreva o seu nome no campo “Seu nome (quem está revisando)”, no começo desta área, e aperte **Enter**. Depois clique de novo.")
+            st.error("Antes de decidir, escreva o seu nome no campo “Seu nome (quem está revisando)”, no começo desta área, e clique em **Confirmar**. Depois clique de novo.")
 
         origens = resultado.origens.get(chave, [])
         with st.expander(f"De quais mensagens pode ter vindo ({len(origens)})"):
@@ -331,23 +336,38 @@ def _cartao(ativo, caracteres_por_linha):
                 st.markdown(f"- **{m['autor']}** · {m['canal']} · `{m['tipo']}`" + (f" · {m['id']}" if m["id"] else ""))
 
 
-st.text_input("Seu nome (quem está revisando)", key="revisor", placeholder="Ex.: Maria Silva")
+# O nome só vale depois de confirmado: o botão evita que a pessoa esqueça de apertar Enter
+with st.form("form_revisor", border=False):
+    coluna_nome, coluna_botao = st.columns([5, 1], vertical_alignment="bottom")
+    coluna_nome.text_input("Seu nome (quem está revisando)", key="revisor", placeholder="Ex.: Maria Silva")
+    coluna_botao.form_submit_button("Confirmar", type="primary", width="stretch")
 st.caption(
     "O nome é **declarado por você, sem login**: nesta versão de demonstração a tela não confirma quem é a pessoa. "
-    "Ele aparece no registro de cada aprovação ou reprovação. Depois de escrever, aperte **Enter**."
+    "Ele aparece no registro de cada aprovação ou reprovação. Depois de escrever, clique em **Confirmar**."
 )
 
-# O post (o mais comprido) fica à esquerda; o destaque da newsletter e a FAQ ficam empilhados à direita
+# Os três conteúdos ficam um embaixo do outro, na largura da página: mais fácil de ler e de editar
 post, destaque, faq = ativos_para_exibir(resposta)
-coluna_post, coluna_outros = st.columns([3, 2])
-with coluna_post:
-    _cartao(post, caracteres_por_linha=95)
-with coluna_outros:
-    _cartao(destaque, caracteres_por_linha=48)
-    _cartao(faq, caracteres_por_linha=48)
+_cartao(post, caracteres_por_linha=150)
+_cartao(destaque, caracteres_por_linha=150)
+_cartao(faq, caracteres_por_linha=150)
+
+# Resumo da comunidade: os textos vêm da IA, por isso passam por html.escape antes de entrar no HTML
+st.divider()
+st.markdown("#### Resumo da comunidade")
+st.markdown(
+    "<div class='resumo'>"
+    f"<div><div class='rot'>Mensagens analisadas</div><div class='val'>{html.escape(str(resumo['total_interacoes_processadas']))}</div></div>"
+    f"<div><div class='rot'>Clima da comunidade</div><div class='val'>{html.escape(clima_da_comunidade(resumo['sentimento_predominante']))}</div></div>"
+    f"<div><div class='rot'>Assuntos da semana</div><div class='val'>{html.escape(', '.join(resumo['topicos_principais']))}</div></div>"
+    "</div>",
+    unsafe_allow_html=True,
+)
+for aviso in resultado.avisos:
+    st.info(aviso)
 
 # Quantos textos já foram revisados e o arquivo para baixar
-st.divider()
+st.markdown("<hr class='fino'>", unsafe_allow_html=True)
 st.markdown("#### Revisão")
 existentes = [a for a in (post, destaque, faq) if a["existe"]]
 validas = {}
@@ -383,14 +403,3 @@ with st.expander("Para o time técnico"):
         disabled=aprovados == 0,
     )
 
-st.divider()
-st.markdown("#### Resumo da comunidade")
-r1, r2, r3 = st.columns([1, 2, 3])
-r1.caption("Mensagens analisadas")
-r1.markdown(f"**{resumo['total_interacoes_processadas']}**")
-r2.caption("Clima da comunidade")
-r2.markdown(f"**{clima_da_comunidade(resumo['sentimento_predominante'])}**")
-r3.caption("Assuntos da semana")
-r3.markdown("**" + ", ".join(resumo["topicos_principais"]) + "**")
-for aviso in resultado.avisos:
-    st.info(aviso)
