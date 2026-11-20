@@ -40,6 +40,14 @@ Requisitos mínimos do desafio:
 - [x] Demonstração de no mínimo 3 exemplos de transformação de interações em ativos
 - [x] Repositório no GitHub com documentação e diagrama da esteira de distribuição
 
+**Diferencial entregue:** Painel de Curadoria em Streamlit (✅). A pessoa edita, aprova ou reprova cada texto e copia o que foi aprovado. Quem publica entra com o próprio login: a Pauta IA não publica nada sozinha (seção 10).
+
+**Como o projeto roda:**
+
+- A interface roda na máquina de quem usa (seção 12).
+- O armazenamento dos pacotes é na OCI, no bucket Always Free (seção 11).
+- O fluxo é orquestrado em Python puro (seção 5).
+
 ## 👥 4. Público-Alvo e Casos de Uso
 
 **Setor:** MarTech, gestão de comunidades digitais, marketing de conteúdo e engajamento.
@@ -284,11 +292,11 @@ A interface é feita em **Streamlit**. A ideia é mostrar o resumo da comunidade
 streamlit run interface_streamlit.py
 ```
 
-Na própria página, escolha um dos exemplos de demonstração (Conquistas da comunidade, Proposta de estágio e freela, Dúvida técnica) ou envie um `.json` ou `.csv`, e clique em **Gerar conteúdo**. A tela mostra os três conteúdos prontos para revisar (post para o LinkedIn, destaque para a newsletter e pergunta frequente sugerida; o que não tiver material mostra o motivo) e, no fim da página, o resumo da comunidade (mensagens analisadas, clima da comunidade e assuntos da semana). A tela é simples de propósito: não tem barra lateral nem campos técnicos (período, limite de mensagens ou JSON). O período vem do próprio arquivo (no CSV, usa `Semana_Atual`) e o limite é o padrão do motor (10 mensagens). Ela usa a chave da Groq do arquivo `.env`, como a linha de comando, e **não envia nada à OCI**. A cópia local continua sendo gravada em `saida/`. As cores da marca ficam em `.streamlit/config.toml` (botão azul, fundo branco e caixas cinza-claro) e as etiquetas amarelas, em `interface_streamlit.py`. O agente se chama **Pauta IA** (nome escolhido em votação pelo time). O nome fica em `NOME_AGENTE`, em `interface_streamlit.py`. O topo da tela mostra a logo centralizada (`assets/logo_pauta_ia.png`: mascote e nome, com o "IA" em azul); o mascote sozinho fica em `assets/mascote.png` (ícone da aba) e o original vetorial, em `assets/mascote.svg`. O mascote é um desenho original do projeto: um balão de fala em forma de folha de caderno pautada, nas cores da marca. Como o nome está dentro da imagem da logo, trocar o nome exige gerar a imagem de novo. O nome do projeto continua sendo CommunityLab. A lógica fica em `src/interface_logica.py` (com testes offline) e a tela, em `interface_streamlit.py`.
+Na própria página, escolha um dos exemplos de demonstração (Conquistas da comunidade, Proposta de estágio e freela, Dúvida técnica) ou envie um `.json` ou `.csv`, e clique em **Gerar conteúdo**. A tela mostra os três conteúdos prontos para revisar, um embaixo do outro (post para o LinkedIn, destaque para a newsletter e pergunta frequente sugerida; o que não tiver material mostra o motivo) e, logo depois, o resumo da comunidade (mensagens analisadas, clima da comunidade e assuntos da semana). A tela é simples de propósito: não tem barra lateral nem campos técnicos (período, limite de mensagens ou JSON). O período vem do próprio arquivo (no CSV, usa `Semana_Atual`) e o limite é o padrão do motor (10 mensagens). Ela usa a chave da Groq do arquivo `.env`, como a linha de comando, e **não envia nada à OCI**. A cópia local continua sendo gravada em `saida/`. As cores da marca ficam em `.streamlit/config.toml` (botão azul, fundo branco e caixas cinza-claro) e as etiquetas amarelas, em `interface_streamlit.py`. O agente se chama **Pauta IA** (nome escolhido em votação pelo time). O nome fica em `NOME_AGENTE`, em `interface_streamlit.py`. O topo da tela mostra a logo centralizada (`assets/logo_pauta_ia.png`: mascote e nome, com o "IA" em azul); o mascote sozinho fica em `assets/mascote.png` (ícone da aba) e o original vetorial, em `assets/mascote.svg`. O mascote é um desenho original do projeto: um balão de fala em forma de folha de caderno pautada, nas cores da marca. Como o nome está dentro da imagem da logo, trocar o nome exige gerar a imagem de novo. O nome do projeto continua sendo CommunityLab. A lógica fica em `src/interface_logica.py` (com testes offline) e a tela, em `interface_streamlit.py`.
 
 **Passo 2 (pronto):** editar, aprovar ou reprovar cada texto.
 
-- Antes de decidir, a pessoa escreve o **próprio nome** no topo da revisão (e aperta Enter). Sem nome, ao clicar em Aprovar ou Reprovar a tela explica o que fazer.
+- Antes de decidir, a pessoa escreve o **próprio nome** no topo da revisão e clica em **Confirmar**. Sem o nome confirmado, ao clicar em Aprovar ou Reprovar a tela explica o que fazer.
 - **Limite desta versão (MVP):** o nome é **declarado, sem login**. A tela não confirma quem é a pessoa, e qualquer texto é aceito. Por isso o registro mostra quem **disse** ter revisado, não quem foi autenticado. A evolução prevista é um **login**, que passa a ser a trava de segurança: o registro de quem criou, aprovou e publicou cada conteúdo ficaria fiel à pessoa autenticada. Sem login, não há como garantir autoria; com dados reais, esse passo deve ser feito antes de usar a ferramenta (veja [`docs/dados_reais_e_privacidade.md`](docs/dados_reais_e_privacidade.md)).
 - Os textos (título e texto do post, chamada e resumo da newsletter, tema e origem da FAQ) podem ser corrigidos na própria tela. Se a pessoa mudar um texto **depois** de aprovar, a aprovação deixa de valer e é preciso aprovar de novo.
 - **Aprovar** abre uma janela com as pessoas citadas no texto e duas confirmações obrigatórias: que os fatos foram conferidos com as mensagens e que há **autorização** de quem aparece com nome. A lista de pessoas é só um auxílio: o código não verifica autorização (ver `docs/regras_roteamento.md`, decisão 10).
@@ -299,6 +307,8 @@ Na própria página, escolha um dos exemplos de demonstração (Conquistas da co
 - Na área **Para o time técnico**, o botão **Baixar os textos aprovados** gera um `.json` só com o que foi aprovado.
 
 A lógica fica em `src/interface_logica.py` e é testada em `tests/test_interface_passo2.py`.
+
+**Teste da interface com capturas de tela:** [`docs/teste-interface-demo.md`](docs/teste-interface-demo.md) registra o teste manual dos três exemplos, dos casos sujos e do lote completo, com 41 capturas de tela e os arquivos usados nos testes.
 
 ## ☁️ 11. Armazenamento na Nuvem (Oracle Cloud - OCI)
 
@@ -482,8 +492,8 @@ Legenda: ✅ concluída · 🔄 em andamento · ☐ não iniciada
 | Sprint 1 | 19/10 a 25/10 | ✅ |
 | Sprint 2 | 26/10 a 01/11 | ✅ |
 | Sprint 3 | 02/11 a 08/11 | ✅ |
-| Sprint 4 | 09/11 a 15/11 | 🔄 |
-| Sprint 5 | 16/11 a 22/11 | ☐ |
+| Sprint 4 | 09/11 a 15/11 | ✅ |
+| Sprint 5 | 16/11 a 22/11 | ✅ |
 
 ## 👥 15. Equipe e Responsabilidades
 
