@@ -1,0 +1,13 @@
+{
+  "origem_comunidade": "Teste_Interface",
+  "periodo_referencia": "Semana_Teste",
+  "interacoes": [
+    {
+      "id": "DEMO_04",
+      "autor": "Carlos_123",
+      "canal": "#duvidas-gerais",
+      "tipo": "pergunta_tecnica",
+      "texto": ""
+    }
+  ]
+}
